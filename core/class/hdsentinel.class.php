@@ -20,7 +20,7 @@ require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 
 class hdsentinel extends eqLogic {
 
-	public static $_hdsentinelVersion = '0.70';
+	public static $_hdsentinelVersion = '0.80';
 
     public static function decodeXML($_xml, $_ip) {
 	/**
@@ -54,7 +54,7 @@ class hdsentinel extends eqLogic {
             if (array_key_exists('Physical_Disk_Information_Disk_'.$i, $_xml)) {
                 $disk[$i]['Hard_Disk_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Number'];
                 $disk[$i]['Hard_Disk_Device'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Device'];
-                $disk[$i]['Hard_Disk_Serial_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Serial_Number'];              
+                $disk[$i]['Hard_Disk_Serial_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Serial_Number'];
                 $disk[$i]['Total_Size'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Total_Size'];
                 $disk[$i]['Current_Temperature'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Current_Temperature'];
                 $disk[$i]['Maximum_temperature_during_entire_lifespan'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Maximum_temperature_during_entire_lifespan'];
@@ -72,11 +72,9 @@ class hdsentinel extends eqLogic {
 
             foreach ($summaries as $summary => $value) {
 
-                log::add(__CLASS__,'debug', 'Début commandes x: ' . $summary . '- value: ' . $value);
-
-                if ($value != '') {
                 log::add(__CLASS__,'debug', 'Début commandes y: ' . $summary . '- value: ' . $value);
 
+                if ($value != '' && $value != '?' && !preg_match('/^Unknown/',$value)) {
                     $cmd = $eqLogic->searchCmd($summary . " " . $summaries['Hard_Disk_Number'],$summary . " " . $summaries['Hard_Disk_Number']);
                     if (!is_object($cmd)) {
                         if (isset($all_cmds[$summary])) {
@@ -94,7 +92,7 @@ class hdsentinel extends eqLogic {
    	public static function cronHourly() {
 	/**
 	 * Cron démarré toutes les heures par jeedom
-	 * Récupère les logs distants et si démon auto redémarre le cron si inactif 
+	 * Récupère les logs distants et si démon auto redémarre le cron si inactif
 	 *
 	 * @param			|*Cette fonction ne retourne pas de valeur*|
 	 * @return			|*Cette fonction ne retourne pas de valeur*|
@@ -379,7 +377,7 @@ class hdsentinel extends eqLogic {
 
     public function sendFile() {
 	/**
-	 * Envoi les scripts du cron et d'installation 
+	 * Envoi les scripts du cron et d'installation
 	 *
 	 * @param			|*Cette fonction ne retourne pas de valeur*|
 	 * @return			$result        array         Résultat des 2 scripts envoyés
@@ -436,7 +434,7 @@ class hdsentinel extends eqLogic {
 		}
 		return true;
 	}
-      
+
 	public function sendSshFiles($_local, $_target) {
 	/**
 	 * Envoie un fichier à un emplacement donné

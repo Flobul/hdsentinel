@@ -58,7 +58,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
                 $nbDisks = $eqLogic->getNbDisksByEqLogic();
 				$opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
 				echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
-                echo '<span style="font-size:1em;position:absolute;margin-top:19px;margin-left:57px;color:white">'.$nbDisks.'</span>';
+                echo '<span style="border-radius:10px;background:green;padding:1px 3px;font-size:1em;position:absolute;margin-top:19px;margin-left:57px;color:white">'.$nbDisks.'</span>';
 				echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
 				echo '<br>';
 				echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
@@ -187,7 +187,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                     <a class="btn btn-success hdsentinelAction" data-action="getLogDependancy"><i class="far fa-file-alt"></i> {{Log dépendances}}</a>
                                 </div>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label class="col-sm-2 control-label">{{Gestion du cron distant}}</label>
                                 <div class="col-sm-2">

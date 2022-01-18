@@ -1,12 +1,12 @@
 #!/bin/bash
 # created by Flobul
 # This script send value to Jeedom by giving equipment_id and name
-# Needed : APIkey du plugin Jailbreak + id de l'équipement en question
+# Needed : APIkey from plugin hdsentinel + jeedom IP
 
 #############################
 # DECLARATION DES VARIABLES #
 #############################
-SCRIPT_VERSION='0.23'
+SCRIPT_VERSION='0.24'
 
 #############################
 # DECLARATION DES FONCTIONS #
@@ -103,5 +103,17 @@ fi
 
 URL_API="${IP}/plugins/hdsentinel/core/api/hdsentinel.php"
 
-/usr/bin/hdsentinel -xml -r /tmp/hdsentinel
+result=$(/usr/bin/hdsentinel -xml -r /tmp/hdsentinel)
+
+if [[ ${result} =~ 'No hard disk devices found' ]]; then
+    echo "result: disk not found"
+    if command_check lsblk ; then
+        disk=$(lsblk --output NAME | grep -v NAME| head -n 1)
+    elif command_check parted ; then
+        disk=$(parted -l | grep 'Disk /dev' | sed -e 's/Disk \(.*\):.*/\1/')
+    fi
+    echo "disk found: "${disk}
+    [[ ${disk} != '' ]] && /usr/bin/hdsentinel -dev /dev/${disk} -xml -r /tmp/hdsentinel
+fi
+
 postRequest
