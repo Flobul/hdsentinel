@@ -1,0 +1,167 @@
+{
+    "Hard_Disk_Number": [
+        {
+            "logicalId": "Hard_Disk_Number",
+            "name": "Numéro du disque",
+            "type": "info",
+            "subtype": "numeric",
+            "isVisible": 0,
+            "isHistorized": 1,
+            "configuration": {
+                "minValue" : 0
+            }
+        }
+    ],
+    "Hard_Disk_Device": [
+        {
+            "logicalId": "Hard_Disk_Device",
+            "name": "Emplacement du disque",
+            "type": "info",
+            "subtype": "string",
+            "isVisible": 0,
+            "isHistorized": 0,
+            "template": {
+                "dashboard" : "line",
+                "mobile" : "line"
+            }
+        }
+    ],
+    "Hard_Disk_Serial_Number": [
+        {
+            "logicalId": "Hard_Disk_Serial_Number",
+            "name": "Numéro de série du disque",
+            "type": "info",
+            "subtype": "string",
+            "isVisible": 0,
+            "isHistorized": 0,
+            "template": {
+                "dashboard" : "line",
+                "mobile" : "line"
+            }
+        }
+    ],
+    "Total_Size": [
+        {
+            "logicalId": "Total_Size",
+            "name": "Taille totale",
+            "type": "info",
+            "subtype": "numeric",
+            "unite": "Mb",
+            "isVisible": 0,
+            "isHistorized": 1,
+            "template": {
+                "dashboard" : "line",
+                "mobile" : "line"
+            }
+        }
+    ],
+    "Current_Temperature": [
+        {
+            "logicalId": "Current_Temperature",
+            "name": "Température actuelle",
+            "type": "info",
+            "subtype": "numeric",
+            "unite": "°C",
+            "isVisible": 1,
+            "isHistorized": 1
+        }
+    ],
+    "Maximum_temperature_during_entire_lifespan": [
+        {
+            "logicalId": "Maximum_temperature_during_entire_lifespan",
+            "name": "Température maximale atteinte",
+            "type": "info",
+            "subtype": "numeric",
+            "unite": "°C",
+            "isVisible": 1,
+            "isHistorized": 1
+        }
+    ],
+    "Power_on_time": [
+        {
+            "logicalId": "Power_on_time",
+            "name": "Temps sous tension",
+            "type": "info",
+            "subtype": "string",
+            "isVisible": 1,
+            "isHistorized": 0,
+            "template": {
+                "dashboard" : "line",
+                "mobile" : "line"
+            }
+        }
+    ],
+    "Estimated_remaining_lifetime": [
+        {
+            "logicalId": "Estimated_remaining_lifetime",
+            "name": "Durée de vie estimée",
+            "type": "info",
+            "subtype": "string",
+            "isVisible": 1,
+            "isHistorized": 0,
+            "template": {
+                "dashboard" : "line",
+                "mobile" : "line"
+            }
+        }
+    ],
+    "Health": [
+        {
+            "logicalId": "Health",
+            "name": "Santé",
+            "type": "info",
+            "subtype": "numeric",
+            "unite": "%",
+            "isVisible": 1,
+            "isHistorized": 1,
+            "configuration": {
+                "minValue": 0,
+                "maxValue": 100
+            }
+        }
+    ],
+    "Performance": [
+        {
+            "logicalId": "Performance",
+            "name": "Performance",
+            "type": "info",
+            "subtype": "numeric",
+            "unite": "%",
+            "isVisible": 1,
+            "isHistorized": 1,
+            "configuration": {
+                "minValue": 0,
+                "maxValue": 100
+            }
+        }
+    ],
+    "Description": [
+        {
+            "logicalId": "Description",
+            "name": "Description",
+            "type": "info",
+            "subtype": "string",
+            "isVisible": 0,
+            "isHistorized": 0,
+            "template": {
+                "dashboard": "line",
+                "mobile": "line"
+            }
+        }
+    ],
+    "Lifetime_writes": [
+        {
+            "logicalId": "Lifetime_writes",
+            "name": "Lifetime_writes",
+            "type": "info",
+            "subtype": "numeric",
+            "unite": "Tb",
+            "isVisible": 0,
+            "isHistorized": 0,
+            "template": {
+                "dashboard": "line",
+                "mobile": "line"
+            }
+        }
+    ]
+}
