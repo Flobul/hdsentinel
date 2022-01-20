@@ -6,16 +6,17 @@
 #############################
 # DECLARATION DES VARIABLES #
 #############################
-SCRIPT_VERSION='0.24'
+SCRIPT_VERSION='0.25'
 
 #############################
 # DECLARATION DES FONCTIONS #
 #############################
 function usage () {
-   echo "Syntax: $(basename $0) [-a|i|v|V]"
+   echo "Syntax: $(basename $0) [-a|i|v|o|V]"
    echo "options:"
    echo "a     jeedom API key."
    echo "i     jeedom address IP."
+   echo "o     output file type. (mht, html or xml)"
    echo "V     Print software version and exit."
    echo
 }
@@ -42,19 +43,19 @@ function retour_erreur ()
   CODE_ERREUR=$?
   echo $1 "error code $CODE_ERREUR: Trying insecure http"
   if [[ ${CODE_ERREUR} -eq 60 && $1 -eq curl ]]; then
-    /usr/bin/curl -i ${URL_API}'?apikey='${API} -k --form file=@/tmp/hdsentinel.xml --header "Content-Type:text/xml;charset=UTF-8"
+    /usr/bin/curl -i ${URL_API}'?apikey='${API} -k --form file=@/tmp/hdsentinel.${OUTPUT} --header "Content-Type:text/${OUTPUT};charset=UTF-8"
   elif [[ ${CODE_ERREUR} -eq 5 && $1 -eq wget ]]; then
-    /usr/bin/wget ${URL_API}'?apikey='${API} --no-check-certificate --post-file=/tmp/hdsentinel.xml --header='Content-Type:text/xml;charset=UTF-8'
+    /usr/bin/wget ${URL_API}'?apikey='${API} --no-check-certificate --post-file=/tmp/hdsentinel.${OUTPUT} --header='Content-Type:text/${OUTPUT};charset=UTF-8'
   fi
 }
 
 function postRequest ()
 {
   if command_check curl ; then
-    /usr/bin/curl -i ${URL_API}'?apikey='${API} --form file=@/tmp/hdsentinel.xml --header "Content-Type:text/xml;charset=UTF-8"
+    /usr/bin/curl -i ${URL_API}'?apikey='${API} --form file=@/tmp/hdsentinel.${OUTPUT} --header "Content-Type:text/${OUTPUT};charset=UTF-8"
     retour_erreur curl
   elif command_check wget ; then
-    /usr/bin/wget ${URL_API}'?apikey='${API} --post-file=/tmp/hdsentinel.xml --header='Content-Type:text/xml;charset=UTF-8'
+    /usr/bin/wget ${URL_API}'?apikey='${API} --post-file=/tmp/hdsentinel.${OUTPUT} --header='Content-Type:text/${OUTPUT};charset=UTF-8'
     retour_erreur wget
   fi
 }
@@ -65,13 +66,18 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     -a|--api)
       API="$2"
-      shift # past argument
-      shift # past value
+      shift
+      shift
       ;;
     -i|--ip)
       IP="$2"
-      shift # past argument
-      shift # past value
+      shift
+      shift
+      ;;
+    -o|--output)
+      OUTPUT="$2"
+      shift
+      shift
       ;;
     -h|--help)
       help
@@ -92,18 +98,27 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z $API ]]; then
+if [[ -z ${API} ]]; then
     echo "error: API key empty"
     exit 0
 fi
-if [[ -z $IP ]]; then
+if [[ -z ${IP} ]]; then
     echo "error: Address IP empty"
     exit 0
 fi
+if [[ -z ${OUTPUT} ]]; then
+    echo "error: output file type empty";
+    if [ "${OUTPUT}" != 'xml' ] && [ "${OUTPUT}" != 'html' ] && [ "${OUTPUT}" != 'mht' ]; then
+        echo "error: output file type not recognized "${OUTPUT};
+    fi
+    exit 0;
+fi
+
 
 URL_API="${IP}/plugins/hdsentinel/core/api/hdsentinel.php"
 
-result=$(/usr/bin/hdsentinel -xml -r /tmp/hdsentinel)
+#result=$(/usr/bin/hdsentinel -xml -r /tmp/hdsentinel)
+result=$(/usr/bin/hdsentinel -"${OUTPUT}" -r /tmp/hdsentinel)
 
 if [[ ${result} =~ 'No hard disk devices found' ]]; then
     echo "result: disk not found"
@@ -112,8 +127,8 @@ if [[ ${result} =~ 'No hard disk devices found' ]]; then
     elif command_check parted ; then
         disk=$(parted -l | grep 'Disk /dev' | sed -e 's/Disk \(.*\):.*/\1/')
     fi
-    echo "disk found: "${disk}
-    [[ ${disk} != '' ]] && /usr/bin/hdsentinel -dev /dev/${disk} -xml -r /tmp/hdsentinel
+    echo "disk found: ${disk}"
+    [[ ${disk} != '' ]] && /usr/bin/hdsentinel -dev /dev/"${disk}" -"${OUTPUT}" -r /tmp/hdsentinel
 fi
 
 postRequest

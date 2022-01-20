@@ -23,13 +23,26 @@ if (!jeedom::apiAccess(init('apikey'), 'hdsentinel')) {
 }
 
 $input = file_get_contents("php://input");
-$input = substr($input, strpos($input,'<?xml'));
-$input = substr($input, 0, strpos($input,'</Hard_Disk_Sentinel>') + strlen('</Hard_Disk_Sentinel>'));
 
-$xml_action = new SimpleXMLElement($input);
-$result = json_decode(json_encode($xml_action), true);
-log::add('hdsentinel', 'debug', 'php input : ' . json_encode($result));
+if (preg_match('/xml/',$_SERVER['CONTENT_TYPE'])) {
+    $start = strpos($input,"<?xml");
+    $end = '</Hard_Disk_Sentinel>';
 
-hdsentinel::decodeXML($result, $_SERVER['REMOTE_ADDR']);
+    $input = substr($input, $start);
+    $input = substr($input, 0, strpos($input,$end) + strlen($end));
+
+    $xml_action = new SimpleXMLElement($input);
+    $result = json_decode(json_encode($xml_action), true);
+
+    hdsentinel::getApiXmlResult($result, $_SERVER['REMOTE_ADDR']);
+} else if (preg_match('/html/',$_SERVER['CONTENT_TYPE'])) {
+    $start = strpos($input,"<HTML>");
+    $end = '</html>';
+
+    $input = substr($input, $start);
+    $result = substr($input, 0, strpos($input,$end) + strlen($end));
+
+    hdsentinel::getApiHtmlResult($result, $_SERVER['REMOTE_ADDR']);
+}
 
 ?>

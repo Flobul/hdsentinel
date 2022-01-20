@@ -22,7 +22,7 @@ class hdsentinel extends eqLogic {
 
 	public static $_hdsentinelVersion = '0.80';
 
-    public static function decodeXML($_xml, $_ip) {
+    public static function getApiXmlResult($_xml, $_ip) {
 	/**
 	 * Charge le fichier de configuration des commandes
 	 *
@@ -54,7 +54,7 @@ class hdsentinel extends eqLogic {
             if (array_key_exists('Physical_Disk_Information_Disk_'.$i, $_xml)) {
                 $disk[$i]['Hard_Disk_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Number'];
                 $disk[$i]['Hard_Disk_Device'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Device'];
-                $disk[$i]['Hard_Disk_Serial_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Serial_Number'];
+                $disk[$i]['Hard_Disk_Serial_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Serial_Number'];              
                 $disk[$i]['Total_Size'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Total_Size'];
                 $disk[$i]['Current_Temperature'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Current_Temperature'];
                 $disk[$i]['Maximum_temperature_during_entire_lifespan'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Maximum_temperature_during_entire_lifespan'];
@@ -92,7 +92,7 @@ class hdsentinel extends eqLogic {
    	public static function cronHourly() {
 	/**
 	 * Cron démarré toutes les heures par jeedom
-	 * Récupère les logs distants et si démon auto redémarre le cron si inactif
+	 * Récupère les logs distants et si démon auto redémarre le cron si inactif 
 	 *
 	 * @param			|*Cette fonction ne retourne pas de valeur*|
 	 * @return			|*Cette fonction ne retourne pas de valeur*|
@@ -168,6 +168,34 @@ class hdsentinel extends eqLogic {
 		(array_key_exists($word, $translate) == true) ? $word = $translate[$word] : null;
 		return $word;
 	}
+  
+  	public function getHtmlDisksFullResult() {
+
+        $plugin = plugin::byId('hdsentinel');
+        $cmd ='/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
+        $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
+        $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
+        $cmd .= ' -o html';
+
+        return $this->sendSshCmd([$cmd]);
+    }
+
+    public static function getApiHtmlResult($_html, $_ip) {
+	/**
+	 * Crée le fichier html pour la page
+	 *
+	 * @param			$_html    string     Html du résultat
+	 * @param			$_ip      string     Adresse IP
+	 * @return			          array      Tableau des commandes
+	 */
+		$data_path = dirname(__FILE__) . '/../../core/data';
+        $eqLogic = self::searchEqLogic('', $_ip);
+        if (is_object($eqLogic)) {
+            file_put_contents($data_path . '/hdsentinel_'.$eqLogic->getId().'.html', $_html);
+            return true;
+        }
+        return false;
+    }
 
 	public function createCmdsFromConfig($_cmd, $_diskNb) {
 	/**
@@ -267,7 +295,9 @@ class hdsentinel extends eqLogic {
         $return = false;
         $cmd = 'echo "' . $interval . ' www-data /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
-        $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\' >> /tmp/hdsentinel_log 2>&1 &"';
+        $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
+        $cmd .= ' -o xml';
+        $cmd .= ' >> /tmp/hdsentinel_log 2>&1 &"';
         $cmd .= ' > /etc/cron.daily/hdsentinel';
         // erreur de cron ? => if [ $? -ne 0 ]; then echo "Ne peut installer le cron"; fi
         $return = $this->sendSshCmd([$cmd]);
@@ -297,17 +327,33 @@ class hdsentinel extends eqLogic {
 
     public function removeCron() {
 	/**
-	 * Supprime le cron distant dans crontab
+	 * Arrête le cron distant dans crontab (et supprime le fichier pour le relancer)
 	 *
 	 * @param			|*Cette fonction ne retourne pas de valeur*|
 	 * @return			$return			string		Retour de la commande
 	 */
 		log::add(__CLASS__,'info',__('Suppression du cron distant',__FILE__));
         $return = false;
+        $cmd1 = "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
+        $cmd2 = "rm /etc/cron.daily/hdsentinel; echo $?;";
+        $return = $this->sendSshCmd([$cmd1,$cmd2]);
+        return $return;
+    }
+
+    public function stopCron() {
+	/**
+	 * Arrête le cron distant dans crontab (garde le fichier pour le relancer)
+	 *
+	 * @param			|*Cette fonction ne retourne pas de valeur*|
+	 * @return			$return			string		Retour de la commande
+	 */
+		log::add(__CLASS__,'info',__('Arrêt du cron distant',__FILE__));
+        $return = false;
         $cmd = "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
         $return = $this->sendSshCmd([$cmd]);
         return $return;
     }
+
 
     public function statusCron() {
 	/**
@@ -377,7 +423,7 @@ class hdsentinel extends eqLogic {
 
     public function sendFile() {
 	/**
-	 * Envoi les scripts du cron et d'installation
+	 * Envoi les scripts du cron et d'installation 
 	 *
 	 * @param			|*Cette fonction ne retourne pas de valeur*|
 	 * @return			$result        array         Résultat des 2 scripts envoyés
@@ -434,7 +480,7 @@ class hdsentinel extends eqLogic {
 		}
 		return true;
 	}
-
+      
 	public function sendSshFiles($_local, $_target) {
 	/**
 	 * Envoie un fichier à un emplacement donné

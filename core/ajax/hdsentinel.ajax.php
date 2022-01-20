@@ -92,6 +92,14 @@ try {
 		ajax::success($eqLogic->removeCron());
     }
 
+	if (init('action') == 'stopCron') {
+		$eqLogic = hdsentinel::byId(init('id'));
+		if (!is_object($eqLogic)) {
+			throw new Exception(__('stopCron Remote inconnu : ', __FILE__) . init('id'), 9999);
+		}
+		ajax::success($eqLogic->stopCron());
+    }
+
 	if (init('action') == 'createCron') {
 		$eqLogic = hdsentinel::byId(init('id'));
 		if (!is_object($eqLogic)) {
@@ -100,6 +108,28 @@ try {
 		ajax::success($eqLogic->createCron());
     }
 
+	if (init('action') == 'all') {
+        $result = array();
+		foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
+            if (init('make') == 'launch') {
+                $result[] = $eqLogic->launchCron();
+            }
+            if (init('make') == 'upload') {
+                $result[] = $eqLogic->sendFile();
+            }
+            if (init('make') == 'update') {
+                $result[] = $eqLogic->installDependancy();
+            }
+            if (init('make') == 'stop') {
+                $result[] = $eqLogic->stopCron();
+            }
+            if (init('make') == 'stopNdelete') {
+                $result[] = $eqLogic->removeCron();
+            }
+        }
+        ajax::success($result);
+    }
+  
 	throw new Exception('Aucune methode correspondante');
 	/*     * *********Catch exeption*************** */
 } catch (Exception $e) {

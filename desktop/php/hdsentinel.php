@@ -25,10 +25,16 @@ $eqLogics = eqLogic::byType($plugin->getId());
 				<span>{{Configuration}}</span>
 			</div>
 
-			<div class="cursor logoSecondary" id="bt_healthjailbreak">
+			<div class="cursor logoSecondary" id="bt_healthSentinel">
 				<i class="fas fa-medkit"></i>
 				<br>
 				<span>{{Santé}}</span>
+			</div>
+
+			<div class="cursor logoSecondary" id="bt_pageSentinel">
+				<i class="fas fa-hdd"></i>
+				<br>
+				<span>{{Page Html}}</span>
 			</div>
 
 			<div class="cursor logoSecondary" id="bt_hdsentinelDocumentation" data-location="<?=$plugin->getDocumentation()?>">
@@ -187,7 +193,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                     <a class="btn btn-success hdsentinelAction" data-action="getLogDependancy"><i class="far fa-file-alt"></i> {{Log dépendances}}</a>
                                 </div>
                             </div>
-
+                            
                             <div class="form-group">
                                 <label class="col-sm-2 control-label">{{Gestion du cron distant}}</label>
                                 <div class="col-sm-2">
@@ -196,8 +202,9 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                 <div class="col-sm-2">
                                     <a class="btn btn-success hdsentinelAction" data-action="launchCron"><i class="fas fa-play"></i> {{Lancer}}</a>
                                 </div>
-                                <div class="col-sm-2">
-                                    <a class="btn btn-danger hdsentinelAction" data-action="removeCron"><i class="fas fa-stop"></i> {{Arret}}</a>
+                                <div class="col-sm-4">
+                                    <a class="btn btn-danger hdsentinelAction" data-action="stopCron"><i class="fas fa-stop"></i> {{Arrêt}}</a>
+                                    <a class="btn btn-danger hdsentinelAction" data-action="removeCron"><i class="fas fa-stop"></i> {{Arrêt et supprime}}</a>
                                 </div>
                                 <div class="col-sm-2">
                                     <a class="btn btn-success hdsentinelAction" data-action="getLog"><i class="far fa-file-alt"></i> {{Log}}</a>

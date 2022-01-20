@@ -72,8 +72,60 @@ sendVarToJS('version', hdsentinel::$_hdsentinelVersion);
 			</div>
 		</div>
 	</fieldset>
+
+    <fieldset>
+    <legend><i class="icon loisir-darth"></i> {{Distant}}</legend>
+		<?php
+            foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
+				echo '<div class="form-group">';
+				echo '<label class="col-lg-4 control-label">{{Version installée sur}} ' . $eqLogic->getName() . '</label>';
+				echo '<div class="col-lg-6">';
+				echo '<span>' . $eqLogic->getConfiguration('Installed_version','N/A') . ' </span>';
+				echo '<label> {{Dernière communication}} </label>';
+				echo '<span> (' . $eqLogic->getConfiguration('Current_Date_And_Time','N/A') . ')</span>';
+				echo '</div>';
+				echo '</div>';
+			}
+		?>
+    <div class="form-group">
+        <label class="col-lg-3"></label>
+        <div class="col-lg-8">
+            <a class="btn btn-warning allEqlogics" data-action="upload"><i class="fas fa-arrow-up"></i> {{Mettre à jour les fichiers sur tous}}</a>
+            <a class="btn btn-warning allEqlogics" data-action="update"><i class="fas fa-arrow-up"></i> {{Installer HD Sentinel sur tous}}</a>
+            <a class="btn btn-success allEqlogics" data-action="launch"><i class="fas fa-play"></i> {{Tout relancer}}</a>
+            <a class="btn btn-danger allEqlogics" data-action="stop"><i class="fas fa-stop"></i> {{Tout arrêter}}</a>
+            <a class="btn btn-danger allEqlogics" data-action="stopNdelete"><i class="fas fa-stop"></i> {{Tout arrêter et supprimer}}</a>
+        </div>
+	</div>
 </form>
 <script>
 var dateVersion = $("#span_plugin_install_date").html();
 $("#span_plugin_install_date").empty().append("v" + version + " ("+dateVersion+")");
+
+
+
+$('.allEqlogics').on('click', function () {
+     var action = $(this).attr('data-action');
+	 $.ajax({// fonction permettant de faire de l'ajax
+            type: "POST", // methode de transmission des données au fichier php
+            url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php", // url du fichier php
+            data: {
+                action: 'all',
+                make: action
+            },
+            dataType: 'json',
+            error: function (request, status, error) {
+                handleAjaxError(request, status, error);
+            },
+            success: function (data) { // si l'appel a bien fonctionné
+                if (data.state != 'ok') {
+                    $('#div_alert').showAlert({message: data.result, level: 'danger'});
+                    return;
+                }
+              console.log(data)
+                $('#div_alert').showAlert({message: '{{Réussie}}', level: 'success'});
+            }
+        });
+});
+
 </script>

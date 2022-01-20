@@ -36,10 +36,17 @@ $('#bt_hdsentinelDocumentation').off('click').on('click',function(){
     window.open($(this).attr("data-location"), "_blank", null);
 });
 
-$('#bt_healthjailbreak').on('click', function () {
+$('#bt_healthSentinel').on('click', function () {
   $('#md_modal').dialog({title: "{{Santé Hard Disk Sentinel}}"});
   $('#md_modal').load('index.php?v=d&plugin=hdsentinel&modal=health').dialog('open');
 });
+
+$('#bt_pageSentinel').on('click', function () {
+  $('#md_modal').dialog({title: "{{Page Html Hard Disk Sentinel}}"});
+  $('#md_modal').load('index.php?v=d&plugin=hdsentinel&modal=page').dialog('open');
+});
+
+
 
 /*$('.hdsentinelAction').on('click', function () {
   if ($('.eqLogicAttr[data-l1key=configuration][data-l2key=addressip]').value() == ''
@@ -238,6 +245,34 @@ $('.hdsentinelAction[data-action=removeCron]').on('click', function () {
                 return;
             }
             $('#div_alert').showAlert({message: '{{Suppression du cron réussie.}}', level: 'success'});
+        }
+    });
+});
+
+$('.hdsentinelAction[data-action=stopCron]').on('click', function () {
+    var id = $('.eqLogicAttr[data-l1key=id]').value();
+    $.ajax({
+        type: "POST",
+        url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
+        data: {
+            action: "stopCron",
+            id: id
+        },
+        dataType: 'json',
+        error: function (request, status, error) {
+            handleAjaxError(request, status, error,$('#div_alert'));
+        },
+        success: function (data) {
+            if (data.state != 'ok') {
+                $('#div_alert').showAlert({message: data.result, level: 'danger'});
+                return;
+            }
+            refreshStatusMode(id);
+            if ((1 - data.result) != '1') {
+                $('#div_alert').showAlert({message: '{{Arrêt du cron échoué :}}'+data.result, level: 'danger'});
+                return;
+            }
+            $('#div_alert').showAlert({message: '{{Arrêt du cron réussie.}}', level: 'success'});
         }
     });
 });
