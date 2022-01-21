@@ -77,7 +77,7 @@ $eqLogics = hdsentinel::byType('hdsentinel');
                 for($i=0 ; $i < $nbDisks; $i++) {
                     $nbName=($nbDisks < 1)?'':' '.$i;
                 ?>
-                    <div class="col-sm-3">
+                    <div class="col-sm-3" style="min-height:300px">
                             <div>
                                 <?php
                                     $hddCmd = $eqLogic->getCmd('info','Hard_Disk_Device'.$nbName);
@@ -95,7 +95,7 @@ $eqLogics = hdsentinel::byType('hdsentinel');
                                     if (is_object($sizeCmd)) {
                                 ?>
                                 <label class="control-label"><?= $sizeCmd->getName() ?></label>
-                                <span class="pull-right label label-info" data-cmd_id='<?= $sizeCmd->getId() ?>' data-unit='Mb'></span>
+                                <span class="pull-right label label-info cursor history" data-cmd_id='<?= $sizeCmd->getId() ?>' data-unit='Mb'></span>
                                 <?php
                                     }
                                 ?>
@@ -128,7 +128,7 @@ $eqLogics = hdsentinel::byType('hdsentinel');
                                     if (is_object($perfCmd)) {
                                 ?>
                                 <label class="control-label"><?= $perfCmd->getName() ?></label>
-                                <span class="pull-right label label-info" data-cmd_id='<?= $perfCmd->getId() ?>' data-unit='<?= $perfCmd->getUnite() ?>'></span>
+                                <span class="pull-right label label-info cursor history" data-cmd_id='<?= $perfCmd->getId() ?>' data-unit='<?= $perfCmd->getUnite() ?>'></span>
                                 <?php
                                     }
                                 ?>
@@ -139,7 +139,7 @@ $eqLogics = hdsentinel::byType('hdsentinel');
                                     if (is_object($healthCmd)) {
                                 ?>
                                 <label class="control-label"><?= $healthCmd->getName() ?></label>
-                                <span class="pull-right label label-info" data-cmd_id='<?= $healthCmd->getId() ?>' data-unit='<?= $healthCmd->getUnite() ?>'></span>
+                                <span class="pull-right label label-info cursor history" data-cmd_id='<?= $healthCmd->getId() ?>' data-unit='<?= $healthCmd->getUnite() ?>'></span>
                                 <?php
                                     }
                                 ?>
@@ -150,7 +150,7 @@ $eqLogics = hdsentinel::byType('hdsentinel');
                                     if (is_object($tempCmd)) {
                                 ?>
                                 <label class="control-label"><?= $tempCmd->getName() ?></label>
-                                <span class="pull-right label label-info" data-cmd_id='<?= $tempCmd->getId() ?>' data-unit='<?= $tempCmd->getUnite() ?>'></span>
+                                <span class="pull-right label label-info cursor history" data-cmd_id='<?= $tempCmd->getId() ?>' data-unit='<?= $tempCmd->getUnite() ?>'></span>
                                 <?php
                                     }
                                 ?>
@@ -161,7 +161,18 @@ $eqLogics = hdsentinel::byType('hdsentinel');
                                     if (is_object($maxtempCmd)) {
                                 ?>
                                 <label class="control-label"><?= $maxtempCmd->getName() ?></label>
-                                <span class="pull-right label label-info" data-cmd_id='<?= $maxtempCmd->getId() ?>' data-unit='<?= $maxtempCmd->getUnite() ?>'></span>
+                                <span class="pull-right label label-info cursor history" data-cmd_id='<?= $maxtempCmd->getId() ?>' data-unit='<?= $maxtempCmd->getUnite() ?>'></span>
+                                <?php
+                                    }
+                                ?>
+                            </div>
+                            <div>
+                                <?php
+                                    $writCmd = $eqLogic->getCmd('info','Lifetime_writes'.$nbName);
+                                    if (is_object($writCmd)) {
+                                ?>
+                                <label class="control-label"><?= $writCmd->getName() ?></label>
+                                <span class="pull-right label label-info cursor history" data-cmd_id='<?= $writCmd->getId() ?>' data-unit='<?= $writCmd->getUnite() ?>'></span>
                                 <?php
                                     }
                                 ?>
@@ -188,6 +199,7 @@ $eqLogics = hdsentinel::byType('hdsentinel');
                       updateValue($timeCmd);
                       updateValue($descCmd);
                       updateValue($maxtempCmd);
+                      updateValue($writCmd);
                     }
                   ?>
                 </div>
@@ -202,7 +214,7 @@ $eqLogics = hdsentinel::byType('hdsentinel');
 		<tr>
 			<th>{{Module}}</th>
 			<th>{{IP}}</th>
-			<th>{{Dernier rapport}}</th>
+			<th>{{Version HDSentinel}}</th>
 			<th>{{Démarré depuis (s)}}</th>
 			<th>{{Démarré depuis}}</th>
 			<th>{{Dernière communication}}</th>
@@ -229,3 +241,8 @@ foreach ($eqLogics as $eqLogic) {
 ?>
 	</tbody>
 </table>
+  <script>
+    $('#accordionHdsentinel').off('click', '.history').on('click', '.history', function (event) {
+        $('#md_modal2').dialog({title: "{{Historique}}"}).load('index.php?v=d&modal=cmd.history&id=' + $(this).data('cmd_id')).dialog('open')
+    });
+  </script>

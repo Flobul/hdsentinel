@@ -34,9 +34,9 @@ class hdsentinel extends eqLogic {
 		if (isset($_xml['General_Information'])) {
             $array['name'] = $_xml['General_Information']['Computer_Information']['Computer_Name'];
             $array['logicalId'] = $_xml['General_Information']['Computer_Information']['MAC_Address'];
-            $array['configuration']['MAC_Address'] = $_xml['General_Information']['Computer_Information']['MAC_Address'];
             $array['configuration']['addressip'] = $_ip;
-            $array['configuration'] = array_merge($_xml['General_Information']['Application_Information'],$_xml['General_Information']['System_Information']);
+            $_xml['General_Information']['Application_Information']['Current_Date_And_Time'] = self::convertCurrentDateAndTime($_xml['General_Information']['Application_Information']['Current_Date_And_Time']);
+            $array['configuration'] = array_merge($_xml['General_Information']['Computer_Information'],$_xml['General_Information']['Application_Information'],$_xml['General_Information']['System_Information']);
         }
 	    log::add(__CLASS__,'debug', 'Début equipement');
         $eqLogic = self::searchEqLogic($array['logicalId'], $_ip);
@@ -58,11 +58,12 @@ class hdsentinel extends eqLogic {
                 $disk[$i]['Total_Size'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Total_Size'];
                 $disk[$i]['Current_Temperature'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Current_Temperature'];
                 $disk[$i]['Maximum_temperature_during_entire_lifespan'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Maximum_temperature_during_entire_lifespan'];
-                $disk[$i]['Power_on_time'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Power_on_time'];
-                $disk[$i]['Estimated_remaining_lifetime'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Estimated_remaining_lifetime'];
+                $disk[$i]['Power_on_time'] = self::translatePowerOnTime($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Power_on_time']);
+                $disk[$i]['Estimated_remaining_lifetime'] = self::translateEstimatedRemainingLifetime($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Estimated_remaining_lifetime']);
                 $disk[$i]['Health'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Health'];
                 $disk[$i]['Performance'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Performance'];
                 $disk[$i]['Description'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Description'];
+                $disk[$i]['Lifetime_writes'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Lifetime_writes'];
             }
         }
 
@@ -87,6 +88,41 @@ class hdsentinel extends eqLogic {
                 }
             }
         }
+    }
+
+    public static function translatePowerOnTime($_string) {
+	/**
+	 * Traduit le temps sous tension en français
+	 *
+	 * @param			$_string      string       Valeur en anglais
+	 * @return			              string       Valeur en français
+	 */
+        $arrEng = array('days','day','hours','hour');
+        $arrFra = array(__('jours',__FILE__),__('jour',__FILE__),__('heures',__FILE__),__('heure',__FILE__));
+        return str_replace($arrEng,$arrFra,$_string);
+    }
+
+    public static function translateEstimatedRemainingLifetime($_string) {
+	/**
+	 * Traduit le temps restant estimé en français
+	 *
+	 * @param			$_string      string       Valeur en anglais
+	 * @return			              string       Valeur en français
+	 */
+        $arrEng = array('more than','days','hours','hour');
+        $arrFra = array(__('plus de',__FILE__),__('jours',__FILE__),__('heures',__FILE__),__('heure',__FILE__));
+        return str_replace($arrEng,$arrFra,$_string);
+    }
+
+    public static function convertCurrentDateAndTime($_string) {
+	/**
+	 * Converti le format de date et heure du dernier rapport en temps conventionel jeedom
+	 *
+	 * @param			$_string      string       Temps reçu
+	 * @return			              string       Temps converti
+	 */
+        $datetime = DateTime::createFromFormat("d-n-y H:i:s", $_string);
+        return $datetime->format('Y-m-d H:i:s');
     }
 
    	public static function cronHourly() {
@@ -162,6 +198,7 @@ class hdsentinel extends eqLogic {
             'Power_on_time' => __("Temps sous tension", __FILE__),
             'Estimated_remaining_lifetime' => __("Durée de vie estimée", __FILE__),
             'Health' => __("Santé", __FILE__),
+            'Lifetime_writes' => __("Écriture totale", __FILE__),
             'Performance' => __("Performance", __FILE__),
             'Description' => __("Déscription", __FILE__),
         );

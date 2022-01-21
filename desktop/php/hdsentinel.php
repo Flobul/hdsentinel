@@ -8,6 +8,16 @@ sendVarToJS('eqType', $plugin->getId());
 $eqLogics = eqLogic::byType($plugin->getId());
 
 ?>
+<style>
+  .classinfoEqlogic {
+      border-radius:10px;
+      padding:1px 3px;
+      font-size:1em;
+      position:absolute;
+      margin-left:57px;
+      color:white;
+  }
+</style>
 
 <div class="row row-overflow">
 	<div class="col-xs-12 eqLogicThumbnailDisplay">
@@ -62,9 +72,21 @@ $eqLogics = eqLogic::byType($plugin->getId());
 			echo '<div class="eqLogicThumbnailContainer">';
 			foreach ($eqLogics as $eqLogic) {
                 $nbDisks = $eqLogic->getNbDisksByEqLogic();
+                $pourcentHealth = 0;
+                for($i=0 ; $i < $nbDisks; $i++) {
+                    $nbName=($nbDisks < 1)?'':' '.$i;
+                    $health = $eqLogic->getCmd('info','Health'.$nbName);
+                    if (is_object($health)) {
+                        $pourcentHealth = ( intval($pourcentHealth) + $health->execCmd() );
+                    }
+                }
+                $pourcentHealth = ( intval($pourcentHealth) / intval($nbDisks) );
+                $colorHealth = ($pourcentHealth<90)?($pourcentHealth<75)?'red':'orange':'green';
 				$opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
+
 				echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
-                echo '<span style="border-radius:10px;background:green;padding:1px 3px;font-size:1em;position:absolute;margin-top:19px;margin-left:57px;color:white">'.$nbDisks.'</span>';
+                echo '<span class="classinfoEqlogic label-info" style="margin-top:19px;" title="{{Nombre de disques}}">'.$nbDisks.'</span>';
+                echo '<span class="classinfoEqlogic" style="margin-top:63px;background:'.$colorHealth.';" title="{{Santé (moyenne)}}">'.$pourcentHealth.' %</span>';
 				echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
 				echo '<br>';
 				echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
@@ -220,7 +242,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                 </div>
                                 <div class="col-sm-4">
                                     <a class="btn btn-danger hdsentinelAction" data-action="stopCron"><i class="fas fa-stop"></i> {{Arrêter}}</a>
-                                    <a class="btn btn-danger hdsentinelAction" data-action="removeCron"><i class="fas fa-stop"></i> {{Arrêter et supprimer}}</a>
+                                    <a class="btn btn-danger hdsentinelAction" data-action="removeCron"><i class="fas fa-trash-alt"></i> {{Arrêter et supprimer}}</a>
                                 </div>
                                 <div class="col-sm-2">
                                     <a class="btn btn-success hdsentinelAction" data-action="getLog"><i class="far fa-file-alt"></i> {{Log}}</a>
@@ -239,8 +261,8 @@ $eqLogics = eqLogic::byType($plugin->getId());
 								<div class="col-sm-9 callback">
 									<span>
 										<?php
-                      echo network::getNetworkAccess('internal') . '/core/api/jeeApi.php?plugin=hdsentinel&apikey=' . jeedom::getApiKey($plugin->getId()) . '&type=cmd&id=#cmd_id#&value=#value#';
-                    ?>
+                                            echo network::getNetworkAccess('internal') . '/core/api/jeeApi.php?plugin=hdsentinel&apikey=' . jeedom::getApiKey($plugin->getId()) . '&type=cmd&id=#cmd_id#&value=#value#';
+										?>
 									</span>
 								</div>
 							</div>

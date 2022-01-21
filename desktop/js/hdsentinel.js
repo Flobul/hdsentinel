@@ -294,7 +294,8 @@ function printEqLogic(_eqLogic) {
 
   //affichage des configurations du device
   printEqLogicHelper("{{Version de HDSentinel installée}}", "Installed_version", _eqLogic);
-  printEqLogicHelper("{{Date actuelle}}", "Current_Date_And_Time", _eqLogic);
+  printEqLogicHelper("{{Adresse MAC}}", "MAC_Address", _eqLogic);
+  printEqLogicHelper("{{Date du dernier rapport}}", "Current_Date_And_Time", _eqLogic);
   printEqLogicHelper("{{Date de création du rapport}}", "Report_Creation_Time", _eqLogic);
   printEqLogicHelper("{{Version du système}}", "OS_Version", _eqLogic);
   printEqLogicHelper("{{ID du processus}}", "Process_ID", _eqLogic);
