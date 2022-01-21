@@ -291,9 +291,8 @@ class hdsentinel extends eqLogic {
 	 */
 		log::add(__CLASS__,'info',__('Début création du cron distant',__FILE__));
         $plugin = plugin::byId('hdsentinel');
-        $interval = '03 0 * * *'; //configuration par l'utilisateur ?
         $return = false;
-        $cmd = 'echo "' . $interval . ' www-data /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
+        $cmd = 'echo "' . $this->getConfiguration('autorefresh','03 00 * * *') . ' /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
         $cmd .= ' -o xml';

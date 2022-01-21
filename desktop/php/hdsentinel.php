@@ -180,38 +180,54 @@ $eqLogics = eqLogic::byType($plugin->getId());
 							</div>
 							<legend><i class="fas fa-rocket"></i> {{Gestion distante}}</legend>
 
+							<div class="form-group">
+								<label class="col-sm-3 control-label">{{Auto-actualisation}}
+									<sup><i class="fas fa-question-circle tooltips" title="{{Fréquence de rafraîchissement du cron}}</br>{{Pensez à sauvegarder, puis Arrêter et supprimer le cron et Lancer.}}"></i></sup>
+								</label>
+								<div class="col-sm-6">
+									<div class="input-group">
+										<input type="text" class="eqLogicAttr form-control roundedLeft" data-l1key="configuration" data-l2key="autorefresh" placeholder="{{Cliquer sur ? pour afficher l'assistant cron}}">
+										<span class="input-group-btn">
+											<a class="btn btn-default cursor jeeHelper roundedRight" data-helper="cron" title="Assistant cron">
+												<i class="fas fa-question-circle"></i>
+											</a>
+										</span>
+									</div>
+								</div>
+							</div>
+
                             <div class="form-group">
-                                <label class="col-sm-2 control-label">{{Envoi des fichiers nécessaires}}</label>
-                                <div class="col-sm-3">
-                                    <a class="btn btn-warning hdsentinelAction" data-action="sendFiles"><i class="fas fa-upload"></i> {{Envoyer les fichiers}}</a>
+                                <label class="col-sm-3 control-label">{{Envoi des fichiers nécessaires}}</label>
+                                <div class="col-sm-2">
+                                    <a class="btn btn-warning hdsentinelAction" data-action="sendFiles"><i class="fas fa-upload"></i> {{Envoyer}}</a>
                                 </div>
-                                <label class="col-sm-2 control-label">{{Installation des dépendances}}</label>
-                                <div class="col-sm-3">
-                                    <a class="btn btn-warning hdsentinelAction" data-action="installDependancy"><i class="fas fa-spinner"></i> {{Installer HD Sentinel}}</a>
+                                <label class="col-sm-3 control-label">{{Installation des dépendances}}</label>
+                                <div class="col-sm-2">
+                                    <a class="btn btn-warning hdsentinelAction" data-action="installDependancy"><i class="fas fa-spinner"></i> {{Installer}}</a>
                                 </div>
                                 <div class="col-sm-2">
-                                    <a class="btn btn-success hdsentinelAction" data-action="getLogDependancy"><i class="far fa-file-alt"></i> {{Log dépendances}}</a>
+                                    <a class="btn btn-success hdsentinelAction" data-action="getLogDependancy"><i class="far fa-file-alt"></i> {{Log}}</a>
                                 </div>
                             </div>
                             
                             <div class="form-group">
-                                <label class="col-sm-2 control-label">{{Gestion du cron distant}}</label>
-                                <div class="col-sm-2">
+                                <label class="col-sm-3 control-label">{{Gestion du cron distant}}</label>
+                                <div class="col-sm-1">
                                     <a class="hdsentinelAction" data-action="checkremotecron"></a>
                                 </div>
                                 <div class="col-sm-2">
                                     <a class="btn btn-success hdsentinelAction" data-action="launchCron"><i class="fas fa-play"></i> {{Lancer}}</a>
                                 </div>
                                 <div class="col-sm-4">
-                                    <a class="btn btn-danger hdsentinelAction" data-action="stopCron"><i class="fas fa-stop"></i> {{Arrêt}}</a>
-                                    <a class="btn btn-danger hdsentinelAction" data-action="removeCron"><i class="fas fa-stop"></i> {{Arrêt et supprime}}</a>
+                                    <a class="btn btn-danger hdsentinelAction" data-action="stopCron"><i class="fas fa-stop"></i> {{Arrêter}}</a>
+                                    <a class="btn btn-danger hdsentinelAction" data-action="removeCron"><i class="fas fa-stop"></i> {{Arrêter et supprimer}}</a>
                                 </div>
                                 <div class="col-sm-2">
                                     <a class="btn btn-success hdsentinelAction" data-action="getLog"><i class="far fa-file-alt"></i> {{Log}}</a>
                                 </div>
                                 </div>
                                 <div class="form-group">
-                                <label class="col-sm-2 control-label">{{Gestion du cron automatique}}</label>
+                                <label class="col-sm-3 control-label">{{Gestion du cron automatique}}</label>
                                 <div class="col-sm-2">
                                     <a class="btn btn-danger hdsentinelAction" data-action="changeAutoModeRemote"></a>
                                     <input type="hidden" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="remoteDaemonAuto"/>

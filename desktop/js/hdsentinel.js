@@ -85,13 +85,18 @@ function refreshStatusMode(_id) {
                 $('#div_alert').showAlert({message: data.result, level: 'danger'});
                 return;
             }
-          console.log(data)
             if (data.result == true ) {
                 $('.hdsentinelAction[data-action=checkremotecron]').removeClass('btn-danger').addClass('btn-success');
-                $('.hdsentinelAction[data-action=checkremotecron]').html('<span class="label label-success btn-xs">Lancé</span>');
+                $('.hdsentinelAction[data-action=checkremotecron]').html('<span class="label label-success btn-xs">{{Lancé}}</span>');
+                $('.hdsentinelAction[data-action=launchCron]').hide();
+                $('.hdsentinelAction[data-action=stopCron]').show();
+                $('.hdsentinelAction[data-action=removeCron]').show();
             } else {
                 $('.hdsentinelAction[data-action=checkremotecron]').removeClass('btn-success').addClass('btn-danger');
                 $('.hdsentinelAction[data-action=checkremotecron]').html('<span class="label label-danger btn-xs">NOK</span>');
+                $('.hdsentinelAction[data-action=launchCron]').show();
+                $('.hdsentinelAction[data-action=stopCron]').hide();
+                $('.hdsentinelAction[data-action=removeCron]').hide();
             }
         }
     });

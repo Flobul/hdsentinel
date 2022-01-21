@@ -6,18 +6,18 @@
 #############################
 # DECLARATION DES VARIABLES #
 #############################
-SCRIPT_VERSION='0.25'
+SCRIPT_VERSION='0.26'
 
 #############################
 # DECLARATION DES FONCTIONS #
 #############################
 function usage () {
-   echo "Syntax: $(basename $0) [-a|i|v|o|V]"
+   echo "Syntax: $(basename $0) [-a|i|v|o]"
    echo "options:"
    echo "a     jeedom API key."
    echo "i     jeedom address IP."
    echo "o     output file type. (mht, html or xml)"
-   echo "V     Print software version and exit."
+   echo "v     Print software version and exit."
    echo
 }
 
@@ -83,7 +83,7 @@ while [[ $# -gt 0 ]]; do
       help
       exit 1
       ;;
-    -V|--version)
+    -v|--version)
       echo ${SCRIPT_VERSION}
       exit 1
       ;;
@@ -117,7 +117,6 @@ fi
 
 URL_API="${IP}/plugins/hdsentinel/core/api/hdsentinel.php"
 
-#result=$(/usr/bin/hdsentinel -xml -r /tmp/hdsentinel)
 result=$(/usr/bin/hdsentinel -"${OUTPUT}" -r /tmp/hdsentinel)
 
 if [[ ${result} =~ 'No hard disk devices found' ]]; then

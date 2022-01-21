@@ -198,9 +198,6 @@ $eqLogics = hdsentinel::byType('hdsentinel');
     ?>
   
 <table class="table table-condensed tablesorter" id="table_healthHdsentinel">
-<span class='pull-right'>
-    <a class="btn btn-default pull-right" id="bt_refreshHealth"><i class="fas fa-sync-alt"></i> {{Rafraîchir}}</a>
-</span>
 	<thead>
 		<tr>
 			<th>{{Module}}</th>
@@ -232,22 +229,3 @@ foreach ($eqLogics as $eqLogic) {
 ?>
 	</tbody>
 </table>
-
-<script>
-$('#bt_refreshHealth').on('click', function () {
-  $('#md_modal').dialog({title: "{{Santé Hard Disk Sentinel}}"});
-  $('#md_modal').load('index.php?v=d&plugin=hdsentinel&modal=health').dialog('open');
-});
-  
-    $('#accordionHdsentinel').delegate('.proxmox_action', 'click', function() {
-        jeedom.cmd.execute({
-            id: $(this).data('cmd_id')
-        });
-        $actions = $(this).parent().find('.proxmox_action');
-        $actions.addClass('disabled');
-        setTimeout(() => {
-            $actions.removeClass('disabled');
-        }, 5000);
-
-    });
-</script>
