@@ -233,7 +233,7 @@ foreach ($eqLogics as $eqLogic) {
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $exp[0] . '</span></td>';
 
     $exp2 = str_replace(')','',implode(' ', explode(',',$exp[1])));
-	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $exp2 . '</span></td>';
+	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . hdsentinel::translatePowerOnTime($exp2) . '</span></td>';
 
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getStatus('lastCommunication','0') . '</span></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('createtime') . '</span></td></tr>';

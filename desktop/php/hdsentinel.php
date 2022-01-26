@@ -86,7 +86,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
 
 				echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
                 echo '<span class="classinfoEqlogic label-info" style="margin-top:19px;" title="{{Nombre de disques}}">'.$nbDisks.'</span>';
-                echo '<span class="classinfoEqlogic" style="margin-top:63px;background:'.$colorHealth.';" title="{{Santé (moyenne)}}">'.$pourcentHealth.' %</span>';
+                echo (is_nan($pourcentHealth)) ? '' : '<span class="classinfoEqlogic" style="margin-top:63px;background:'.$colorHealth.';" title="{{Santé (moyenne)}}">'.$pourcentHealth.' %</span>';
 				echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
 				echo '<br>';
 				echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
@@ -231,7 +231,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                     <a class="btn btn-success hdsentinelAction" data-action="getLogDependancy"><i class="far fa-file-alt"></i> {{Log}}</a>
                                 </div>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label class="col-sm-3 control-label">{{Gestion du cron distant}}</label>
                                 <div class="col-sm-1">
