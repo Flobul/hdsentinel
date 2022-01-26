@@ -18,30 +18,31 @@
 
 require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 
-class hdsentinel extends eqLogic {
+class hdsentinel extends eqLogic
+{
+    public static $_hdsentinelVersion = '0.80';
 
-	public static $_hdsentinelVersion = '0.80';
-
-    public static function getApiXmlResult($_xml, $_ip) {
-	/**
-	 * Charge le fichier de configuration des commandes
-	 *
-	 * @param			$_xml     string     Tableau venant de HDSentinel en XML
-	 * @param			$_ip      string     Adresse IP
-	 * @return			          array      Tableau des commandes
-	 */
+    public static function getApiXmlResult($_xml, $_ip)
+    {
+        /**
+         * Charge le fichier de configuration des commandes
+         *
+         * @param			$_xml     string     Tableau venant de HDSentinel en XML
+         * @param			$_ip      string     Adresse IP
+         * @return			          array      Tableau des commandes
+         */
         $array = array();
-		if (isset($_xml['General_Information'])) {
+        if (isset($_xml['General_Information'])) {
             $array['name'] = $_xml['General_Information']['Computer_Information']['Computer_Name'];
             $array['logicalId'] = $_xml['General_Information']['Computer_Information']['MAC_Address'];
             $array['configuration']['addressip'] = $_ip;
             $_xml['General_Information']['Application_Information']['Current_Date_And_Time'] = self::convertCurrentDateAndTime($_xml['General_Information']['Application_Information']['Current_Date_And_Time']);
-            $array['configuration'] = array_merge($_xml['General_Information']['Computer_Information'],$_xml['General_Information']['Application_Information'],$_xml['General_Information']['System_Information']);
+            $array['configuration'] = array_merge($_xml['General_Information']['Computer_Information'], $_xml['General_Information']['Application_Information'], $_xml['General_Information']['System_Information']);
         }
-	    log::add(__CLASS__,'debug', 'Début equipement');
+        log::add(__CLASS__, 'debug', 'Début equipement');
         $eqLogic = self::searchEqLogic($array['logicalId'], $_ip);
-        if (!is_object($eqLogic) ) {
-            log::add('hdsentinel','info','Creation hdsentinel : '.$file);
+        if (!is_object($eqLogic)) {
+            log::add('hdsentinel', 'info', 'Creation hdsentinel : '.$file);
             $eqLogic = new hdsentinel();
             $eqLogic->setEqType_name('hdsentinel');
             $eqLogic->setIsEnable(1);
@@ -54,7 +55,7 @@ class hdsentinel extends eqLogic {
             if (array_key_exists('Physical_Disk_Information_Disk_'.$i, $_xml)) {
                 $disk[$i]['Hard_Disk_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Number'];
                 $disk[$i]['Hard_Disk_Device'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Device'];
-                $disk[$i]['Hard_Disk_Serial_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Serial_Number'];              
+                $disk[$i]['Hard_Disk_Serial_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Serial_Number'];
                 $disk[$i]['Total_Size'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Total_Size'];
                 $disk[$i]['Current_Temperature'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Current_Temperature'];
                 $disk[$i]['Maximum_temperature_during_entire_lifespan'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Maximum_temperature_during_entire_lifespan'];
@@ -67,22 +68,20 @@ class hdsentinel extends eqLogic {
             }
         }
 
-	    log::add(__CLASS__,'debug', 'Début commandes');
+        log::add(__CLASS__, 'debug', 'Début commandes');
         $all_cmds = self::loadCmdFromConf();
         foreach ($disk as $nb => $summaries) {
-
             foreach ($summaries as $summary => $value) {
+                log::add(__CLASS__, 'debug', 'Début commandes y: ' . $summary . '- value: ' . $value);
 
-                log::add(__CLASS__,'debug', 'Début commandes y: ' . $summary . '- value: ' . $value);
-
-                if ($value != '' && $value != '?' && !preg_match('/^Unknown/',$value)) {
-                    $cmd = $eqLogic->searchCmd($summary . " " . $summaries['Hard_Disk_Number'],$summary . " " . $summaries['Hard_Disk_Number']);
+                if ($value != '' && $value != '?' && !preg_match('/^Unknown/', $value)) {
+                    $cmd = $eqLogic->searchCmd($summary . " " . $summaries['Hard_Disk_Number'], $summary . " " . $summaries['Hard_Disk_Number']);
                     if (!is_object($cmd)) {
                         if (isset($all_cmds[$summary])) {
-                          $eqLogic->createCmdsFromConfig($all_cmds[$summary], $summaries['Hard_Disk_Number']);
+                            $eqLogic->createCmdsFromConfig($all_cmds[$summary], $summaries['Hard_Disk_Number']);
                         }
                     } else {
-                        log::add(__CLASS__,'debug', 'Début commandes z: ' . $summary . '- value: ' . $value);
+                        log::add(__CLASS__, 'debug', 'Début commandes z: ' . $summary . '- value: ' . $value);
                         $cmd->event($value);
                     }
                 }
@@ -90,103 +89,110 @@ class hdsentinel extends eqLogic {
         }
     }
 
-    public static function translatePowerOnTime($_string) {
-	/**
-	 * Traduit le temps sous tension en français
-	 *
-	 * @param			$_string      string       Valeur en anglais
-	 * @return			              string       Valeur en français
-	 */
+    public static function translatePowerOnTime($_string)
+    {
+        /**
+         * Traduit le temps sous tension en français
+         *
+         * @param			$_string      string       Valeur en anglais
+         * @return			              string       Valeur en français
+         */
         $arrEng = array('days','day','hours','hour');
-        $arrFra = array(__('jours',__FILE__),__('jour',__FILE__),__('heures',__FILE__),__('heure',__FILE__));
-        return str_replace($arrEng,$arrFra,$_string);
+        $arrFra = array(__('jours', __FILE__),__('jour', __FILE__),__('heures', __FILE__),__('heure', __FILE__));
+        return str_replace($arrEng, $arrFra, $_string);
     }
 
-    public static function translateEstimatedRemainingLifetime($_string) {
-	/**
-	 * Traduit le temps restant estimé en français
-	 *
-	 * @param			$_string      string       Valeur en anglais
-	 * @return			              string       Valeur en français
-	 */
+    public static function translateEstimatedRemainingLifetime($_string)
+    {
+        /**
+         * Traduit le temps restant estimé en français
+         *
+         * @param			$_string      string       Valeur en anglais
+         * @return			              string       Valeur en français
+         */
         $arrEng = array('more than','days','hours','hour');
-        $arrFra = array(__('plus de',__FILE__),__('jours',__FILE__),__('heures',__FILE__),__('heure',__FILE__));
-        return str_replace($arrEng,$arrFra,$_string);
+        $arrFra = array(__('plus de', __FILE__),__('jours', __FILE__),__('heures', __FILE__),__('heure', __FILE__));
+        return str_replace($arrEng, $arrFra, $_string);
     }
 
-    public static function convertCurrentDateAndTime($_string) {
-	/**
-	 * Converti le format de date et heure du dernier rapport en temps conventionel jeedom
-	 *
-	 * @param			$_string      string       Temps reçu
-	 * @return			              string       Temps converti
-	 */
+    public static function convertCurrentDateAndTime($_string)
+    {
+        /**
+         * Converti le format de date et heure du dernier rapport en temps conventionel jeedom
+         *
+         * @param			$_string      string       Temps reçu
+         * @return			              string       Temps converti
+         */
         $datetime = DateTime::createFromFormat("d-n-y H:i:s", $_string);
         return $datetime->format('Y-m-d H:i:s');
     }
 
-   	public static function cronHourly() {
-	/**
-	 * Cron démarré toutes les heures par jeedom
-	 * Récupère les logs distants et si démon auto redémarre le cron si inactif 
-	 *
-	 * @param			|*Cette fonction ne retourne pas de valeur*|
-	 * @return			|*Cette fonction ne retourne pas de valeur*|
-	 */
-		foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
-            if ($eqLogic->getConfiguration('remoteDaemonAuto','0') == 1) {
-                log::add(__CLASS__,'info','Redémarrage cron remote ' . $eqLogic->getName());
+    public static function cronHourly()
+    {
+        /**
+         * Cron démarré toutes les heures par jeedom
+         * Récupère les logs distants et si démon auto redémarre le cron si inactif
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         * @return			|*Cette fonction ne retourne pas de valeur*|
+         */
+        foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
+            if ($eqLogic->getConfiguration('remoteDaemonAuto', '0') == 1) {
+                log::add(__CLASS__, 'info', 'Redémarrage cron remote ' . $eqLogic->getName());
                 $eqLogic->launchCron($eqLogic->getId());
             }
             $eqLogic->getLog();
         }
     }
 
-    public static function searchEqLogic($_logicalId, $_ip) {
-	/**
-	 * Trouve la commande associée au logicalId ou au nom donné
-	 *
-	 * @param			$_logicalId		string		LogicalId de commande à trouver
-	 * @param			$_name			string		Nom de commande à trouver
-	 * @return			$cmd			object		Commande trouvée
-	 */
-	    $return = null;
-		foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
-		    if ($eqLogic->getLogicalId() == $_logicalId || $eqLogic->getConfiguration('addressip') == $_ip) {
-		        $return = $eqLogic;
-		        break;
-		    }
-		}
+    public static function searchEqLogic($_logicalId, $_ip)
+    {
+        /**
+         * Trouve la commande associée au logicalId ou au nom donné
+         *
+         * @param			$_logicalId		string		LogicalId de commande à trouver
+         * @param			$_name			string		Nom de commande à trouver
+         * @return			$cmd			object		Commande trouvée
+         */
+        $return = null;
+        foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
+            if ($eqLogic->getLogicalId() == $_logicalId || $eqLogic->getConfiguration('addressip') == $_ip) {
+                $return = $eqLogic;
+                break;
+            }
+        }
         return $return;
     }
 
-	private static function loadCmdFromConf() {
-	/**
-	 * Charge le fichier de configuration des commandes
-	 *
-	 * @param			|*Cette fonction ne retourne pas de valeur*|
-	 * @return			      array      Tableau des commandes
-	 */
-		$return = array();
-		if (!is_file(dirname(__FILE__) . '/../../core/config/all_cmds.json')) {
-			log::add(__CLASS__,'debug', 'Fichier introuvable : all_cmds.json');
-			return;
-		}
-		$content = file_get_contents(dirname(__FILE__) . '/../../core/config/all_cmds.json');
-		if (!is_json($content)) {
-			log::add(__CLASS__,'debug', 'JSON invalide : all_cmds.json');
-			return;
-		}
-		return json_decode($content, true);
+    private static function loadCmdFromConf()
+    {
+        /**
+         * Charge le fichier de configuration des commandes
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         * @return			      array      Tableau des commandes
+         */
+        $return = array();
+        if (!is_file(dirname(__FILE__) . '/../../core/config/all_cmds.json')) {
+            log::add(__CLASS__, 'debug', 'Fichier introuvable : all_cmds.json');
+            return;
+        }
+        $content = file_get_contents(dirname(__FILE__) . '/../../core/config/all_cmds.json');
+        if (!is_json($content)) {
+            log::add(__CLASS__, 'debug', 'JSON invalide : all_cmds.json');
+            return;
+        }
+        return json_decode($content, true);
     }
 
-    private static function translate($word) {
-	/**
-	 * Traduction des informations. (plus utilisé car langue selectionnée dans la requete)
-	 *
-	 * @param	$word		string		Mot en anglais.
-	 * @return	$word		string		Mot en Français (ou anglais, si traduction inexistante).
-	 */
+    private static function translate($word)
+    {
+        /**
+         * Traduction des informations. (plus utilisé car langue selectionnée dans la requete)
+         *
+         * @param	$word		string		Mot en anglais.
+         * @return	$word		string		Mot en Français (ou anglais, si traduction inexistante).
+         */
 
         $translate = array(
             'Hard_Disk_Number' => __("Numérotation du disque", __FILE__),
@@ -202,12 +208,12 @@ class hdsentinel extends eqLogic {
             'Performance' => __("Performance", __FILE__),
             'Description' => __("Déscription", __FILE__),
         );
-		(array_key_exists($word, $translate) == true) ? $word = $translate[$word] : null;
-		return $word;
-	}
-  
-  	public function getHtmlDisksFullResult() {
+        (array_key_exists($word, $translate) == true) ? $word = $translate[$word] : null;
+        return $word;
+    }
 
+    public function getHtmlDisksFullResult()
+    {
         $plugin = plugin::byId('hdsentinel');
         $cmd ='/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
@@ -217,15 +223,16 @@ class hdsentinel extends eqLogic {
         return $this->sendSshCmd([$cmd]);
     }
 
-    public static function getApiHtmlResult($_html, $_ip) {
-	/**
-	 * Crée le fichier html pour la page
-	 *
-	 * @param			$_html    string     Html du résultat
-	 * @param			$_ip      string     Adresse IP
-	 * @return			          array      Tableau des commandes
-	 */
-		$data_path = dirname(__FILE__) . '/../../core/data';
+    public static function getApiHtmlResult($_html, $_ip)
+    {
+        /**
+         * Crée le fichier html pour la page
+         *
+         * @param			$_html    string     Html du résultat
+         * @param			$_ip      string     Adresse IP
+         * @return			          array      Tableau des commandes
+         */
+        $data_path = dirname(__FILE__) . '/../../core/data';
         $eqLogic = self::searchEqLogic('', $_ip);
         if (is_object($eqLogic)) {
             file_put_contents($data_path . '/hdsentinel_'.$eqLogic->getId().'.html', $_html);
@@ -234,46 +241,55 @@ class hdsentinel extends eqLogic {
         return false;
     }
 
-	public function createCmdsFromConfig($_cmd, $_diskNb) {
-	/**
-	 * Crée la/les commande/s fournies par le fichier de conf et l'info qui arrive du disque
-	 *
-	 * @param			$_cmd       array       Array de commande
-	 * @param			$_diskNb    string      Numéro du disque pour saisie de logicalId et Nom
-	 * @return			|*Cette fonction ne retourne pas de valeur*|
-	 */
-		$link_cmds = array();
-		foreach ($_cmd as $cmdDef) {
-			$cmd = $this->getCmd('info', $cmdDef['logicalId'] . " " . $_diskNb);
-			if (!is_object($cmd)) {
-				log::add(__CLASS__, 'debug', 'Création : ' . $cmdDef["logicalId"] . ' - nom : ' . $cmdDef['name']);
-				$cmd = new hdsentinelCmd();
-				$cmd->setLogicalId($cmdDef['logicalId'] . " " . $_diskNb);
-				$cmd->setEqLogic_id($this->getId());
-				$cmd->setName($cmdDef['name'] . " " . $_diskNb);
-				if (isset($cmdDef['isHistorized']))  $cmd->setIsHistorized($cmdDef["isHistorized"]);
-				if (isset($cmdDef['isVisible']))  $cmd->setIsVisible($cmdDef['isVisible']);
-				if (isset($cmdDef['template'])) {
-					foreach ($cmdDef['template'] as $key => $value) {
-						$cmd->setTemplate($key, $value);
-					}
-				}
-    			$cmd->setType($cmdDef["type"]);
-	    		$cmd->setSubType($cmdDef["subtype"]);
-                if (isset($cmdDef["generic_type"]))  $cmd->setGeneric_type($cmdDef["generic_type"]);
-    			if (isset($cmdDef["unite"]))  $cmd->setUnite($cmdDef["unite"]);
+    public function createCmdsFromConfig($_cmd, $_diskNb)
+    {
+        /**
+         * Crée la/les commande/s fournies par le fichier de conf et l'info qui arrive du disque
+         *
+         * @param			$_cmd       array       Array de commande
+         * @param			$_diskNb    string      Numéro du disque pour saisie de logicalId et Nom
+         * @return			|*Cette fonction ne retourne pas de valeur*|
+         */
+        $link_cmds = array();
+        foreach ($_cmd as $cmdDef) {
+            $cmd = $this->getCmd('info', $cmdDef['logicalId'] . " " . $_diskNb);
+            if (!is_object($cmd)) {
+                log::add(__CLASS__, 'debug', 'Création : ' . $cmdDef["logicalId"] . ' - nom : ' . $cmdDef['name']);
+                $cmd = new hdsentinelCmd();
+                $cmd->setLogicalId($cmdDef['logicalId'] . " " . $_diskNb);
+                $cmd->setEqLogic_id($this->getId());
+                $cmd->setName($cmdDef['name'] . " " . $_diskNb);
+                if (isset($cmdDef['isHistorized'])) {
+                    $cmd->setIsHistorized($cmdDef["isHistorized"]);
+                }
+                if (isset($cmdDef['isVisible'])) {
+                    $cmd->setIsVisible($cmdDef['isVisible']);
+                }
+                if (isset($cmdDef['template'])) {
+                    foreach ($cmdDef['template'] as $key => $value) {
+                        $cmd->setTemplate($key, $value);
+                    }
+                }
+                $cmd->setType($cmdDef["type"]);
+                $cmd->setSubType($cmdDef["subtype"]);
+                if (isset($cmdDef["generic_type"])) {
+                    $cmd->setGeneric_type($cmdDef["generic_type"]);
+                }
+                if (isset($cmdDef["unite"])) {
+                    $cmd->setUnite($cmdDef["unite"]);
+                }
                 if (isset($cmdDef['configuration'])) {
                     foreach ($cmdDef['configuration'] as $key => $value) {
                         $cmd->setConfiguration($key, $value);
                     }
                 }
-			    $cmd->save();
-			}
-		}
+                $cmd->save();
+            }
+        }
     }
 
-	public function getNbDisksByEqLogic() {
-
+    public function getNbDisksByEqLogic()
+    {
         $i = 0;
         foreach ($this->getCmd('info') as $allCmd) {
             if (preg_match('/^Health$|^Health [0-9]{1,2}$/', $allCmd->getLogicalId())) {
@@ -283,53 +299,60 @@ class hdsentinel extends eqLogic {
         return $i;
     }
 
-	public function getImage() {
-	/**
-	 * Renvoie l'url de l'image à partir de l'objet
-	 *
-	 * @param			|*Cette fonction ne retourne pas de valeur*|
-	 * @return			$return		string		Url de l'image
-	 */
+    public function getImage()
+    {
+        /**
+         * Renvoie l'url de l'image à partir de l'objet
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         * @return			$return		string		Url de l'image
+         */
         $path = 'plugins/hdsentinel/core/config/images/';
-		$files = ls(__DIR__ . '/../../../../'. $path, '*.png', false, array('files', 'quiet'));
-		$return = "";
-		foreach ($files as $file) {
-			if (preg_match('/'.strtr($file,array('.png' => '')).'/', $this->getConfiguration('groupName')) == false)  continue;
-            if (preg_match('/'.strtr($file,array('.png' => '')).'/', $this->getName()) == false)  continue;
+        $files = ls(__DIR__ . '/../../../../'. $path, '*.png', false, array('files', 'quiet'));
+        $return = "";
+        foreach ($files as $file) {
+            if (preg_match('/'.strtr($file, array('.png' => '')).'/', $this->getConfiguration('groupName')) == false) {
+                continue;
+            }
+            if (preg_match('/'.strtr($file, array('.png' => '')).'/', $this->getName()) == false) {
+                continue;
+            }
             $return = $path . rawurlencode($file);
         }
-		return $return;
-	}
+        return $return;
+    }
 
-    public function searchCmd($_logicalId, $_name) {
-	/**
-	 * Trouve la commande associée au logicalId ou au nom donné
-	 *
-	 * @param			$_logicalId		string		LogicalId de commande à trouver
-	 * @param			$_name			string		Nom de commande à trouver
-	 * @return			$cmd			object		Commande trouvée
-	 */
-	    $cmd = null;
-	    foreach ($this->getCmd() as $liste_cmd) {
-		    if ($liste_cmd->getLogicalId() == $_logicalId || $liste_cmd->getName() == $_name) {
-		        $cmd = $liste_cmd;
-		        break;
-		    }
-		}
+    public function searchCmd($_logicalId, $_name)
+    {
+        /**
+         * Trouve la commande associée au logicalId ou au nom donné
+         *
+         * @param			$_logicalId		string		LogicalId de commande à trouver
+         * @param			$_name			string		Nom de commande à trouver
+         * @return			$cmd			object		Commande trouvée
+         */
+        $cmd = null;
+        foreach ($this->getCmd() as $liste_cmd) {
+            if ($liste_cmd->getLogicalId() == $_logicalId || $liste_cmd->getName() == $_name) {
+                $cmd = $liste_cmd;
+                break;
+            }
+        }
         return $cmd;
     }
 
-    public function createCron() {
-	/**
-	 * Crée le cron distant dans crontab
-	 *
-	 * @param			|*Cette fonction ne retourne pas de valeur*|
-	 * @return			$return			string		Retour de la commande
-	 */
-		log::add(__CLASS__,'info',__('Début création du cron distant',__FILE__));
+    public function createCron()
+    {
+        /**
+         * Crée le cron distant dans crontab
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         * @return			$return			string		Retour de la commande
+         */
+        log::add(__CLASS__, 'info', __('Début création du cron distant', __FILE__));
         $plugin = plugin::byId('hdsentinel');
         $return = false;
-        $cmd = 'echo "' . $this->getConfiguration('autorefresh','03 00 * * *') . ' /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
+        $cmd = 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
         $cmd .= ' -o xml';
@@ -337,38 +360,40 @@ class hdsentinel extends eqLogic {
         $cmd .= ' > /etc/cron.daily/hdsentinel';
         // erreur de cron ? => if [ $? -ne 0 ]; then echo "Ne peut installer le cron"; fi
         $return = $this->sendSshCmd([$cmd]);
-		log::add(__CLASS__,'info',__('Fin création du cron distant',__FILE__));
+        log::add(__CLASS__, 'info', __('Fin création du cron distant', __FILE__));
         return $return;
     }
 
-	public function launchCron() {
-	/**
-	 * Crée le cron distant dans crontab
-	 *
-	 * @param			|*Cette fonction ne retourne pas de valeur*|
-	 * @return			$return			string		Retour de la commande
-	 */
-		log::add(__CLASS__,'info',__('Début lancement du cron distant',__FILE__));
+    public function launchCron()
+    {
+        /**
+         * Crée le cron distant dans crontab
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         * @return			$return			string		Retour de la commande
+         */
+        log::add(__CLASS__, 'info', __('Début lancement du cron distant', __FILE__));
         if (!$this->sendSshCmd(['ls /etc/cron.daily/hdsentinel | wc -l'])) { // présence du script
-		    log::add(__CLASS__,'info',__('Création du cron distant',__FILE__));
+            log::add(__CLASS__, 'info', __('Création du cron distant', __FILE__));
             $this->createCron();
         }
         if (!$this->sendSshCmd(['crontab -l | grep hdsentinel_to_jeedom_pub | wc -l'])) {
-		    log::add(__CLASS__,'info',__('Lancement du cron distant',__FILE__));
-		    $cmd = 'crontab /etc/cron.daily/hdsentinel; echo $?;';
-		    return $this->sendSshCmd([$cmd]);
+            log::add(__CLASS__, 'info', __('Lancement du cron distant', __FILE__));
+            $cmd = 'crontab /etc/cron.daily/hdsentinel; echo $?;';
+            return $this->sendSshCmd([$cmd]);
         }
         return 0;
-	}
+    }
 
-    public function removeCron() {
-	/**
-	 * Arrête le cron distant dans crontab (et supprime le fichier pour le relancer)
-	 *
-	 * @param			|*Cette fonction ne retourne pas de valeur*|
-	 * @return			$return			string		Retour de la commande
-	 */
-		log::add(__CLASS__,'info',__('Suppression du cron distant',__FILE__));
+    public function removeCron()
+    {
+        /**
+         * Arrête le cron distant dans crontab (et supprime le fichier pour le relancer)
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         * @return			$return			string		Retour de la commande
+         */
+        log::add(__CLASS__, 'info', __('Suppression du cron distant', __FILE__));
         $return = false;
         $cmd1 = "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
         $cmd2 = "rm /etc/cron.daily/hdsentinel; echo $?;";
@@ -376,14 +401,15 @@ class hdsentinel extends eqLogic {
         return $return;
     }
 
-    public function stopCron() {
-	/**
-	 * Arrête le cron distant dans crontab (garde le fichier pour le relancer)
-	 *
-	 * @param			|*Cette fonction ne retourne pas de valeur*|
-	 * @return			$return			string		Retour de la commande
-	 */
-		log::add(__CLASS__,'info',__('Arrêt du cron distant',__FILE__));
+    public function stopCron()
+    {
+        /**
+         * Arrête le cron distant dans crontab (garde le fichier pour le relancer)
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         * @return			$return			string		Retour de la commande
+         */
+        log::add(__CLASS__, 'info', __('Arrêt du cron distant', __FILE__));
         $return = false;
         $cmd = "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
         $return = $this->sendSshCmd([$cmd]);
@@ -391,240 +417,248 @@ class hdsentinel extends eqLogic {
     }
 
 
-    public function statusCron() {
-	/**
-	 * Renvoi le status du cron dans le crontab
-	 *
-	 * @param			|*Cette fonction ne retourne pas de valeur*|
-	 * @return			$return			string		Retour de la commande
-	 */
-		log::add(__CLASS__,'info',__('Statut du cron distant',__FILE__));
+    public function statusCron()
+    {
+        /**
+         * Renvoi le status du cron dans le crontab
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         * @return			$return			string		Retour de la commande
+         */
+        log::add(__CLASS__, 'info', __('Statut du cron distant', __FILE__));
         $return = false;
         $cmd = 'crontab -l | grep hdsentinel_to_jeedom_pub | wc -l';
         $return = $this->sendSshCmd([$cmd]);
         return $return;
     }
 
-	public function installDependancy() {
-	/**
-	 * Envoie de commandes à l'appareil distant
-	 *
-	 * @param			|*Cette fonction ne retourne pas de valeur*|
-	 * @return			             string      Retour de la commande
-	 */
-        log::add(__CLASS__,'info',__('Installation des dépendances',__FILE__));
+    public function installDependancy()
+    {
+        /**
+         * Envoie de commandes à l'appareil distant
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         * @return			             string      Retour de la commande
+         */
+        log::add(__CLASS__, 'info', __('Installation des dépendances', __FILE__));
         $return = false;
         $cmd = 'bash /home/'.$this->getConfiguration("user").'/install_apt.sh  >> ' . '/tmp/hdsentinel_dependancy' . ' 2>&1 &';
         $return = $this->sendSshCmd([$cmd]);
         return $return;
-	}
+    }
 
-	public function getLogDependancy($_dependancy='') {
-	/**
-	 * Récupère le log d'installation des dépendances sur l'appareil distant
-	 *
-	 * @param			$_dependancy     string       Pour attriber un nom au log
-	 * @return			                 bool         Retour de la commande
-	 */
+    public function getLogDependancy($_dependancy='')
+    {
+        /**
+         * Récupère le log d'installation des dépendances sur l'appareil distant
+         *
+         * @param			$_dependancy     string       Pour attriber un nom au log
+         * @return			                 bool         Retour de la commande
+         */
         $name = $this->getName();
-		$local = dirname(__FILE__) . '/../../../../log/hdsentinel_'.str_replace(' ','-',$name).$_dependancy;
-		log::add(__CLASS__,'info','Suppression de la log ' . $local);
-		exec('rm -f '. $local);
-		log::add(__CLASS__,'info',__('Récupération de la log distante',__FILE__));
-		if ($this->getFiles($local,'/tmp/hdsentinel_dependancy'.$_dependancy)) {
-			$this->sendSshCmd(['cat /dev/null > /tmp/hdsentinel_dependancy'.$_dependancy]);
-			return true;
-		}
-		return false;
-	}
+        $local = dirname(__FILE__) . '/../../../../log/hdsentinel_'.str_replace(' ', '-', $name).$_dependancy;
+        log::add(__CLASS__, 'info', 'Suppression de la log ' . $local);
+        exec('rm -f '. $local);
+        log::add(__CLASS__, 'info', __('Récupération de la log distante', __FILE__));
+        if ($this->getFiles($local, '/tmp/hdsentinel_dependancy'.$_dependancy)) {
+            $this->sendSshCmd(['cat /dev/null > /tmp/hdsentinel_dependancy'.$_dependancy]);
+            return true;
+        }
+        return false;
+    }
 
-	public function getLog($_dependancy='') {
-	/**
-	 * Récupère le log du cron sur l'appareil distant
-	 *
-	 * @param			$_dependancy     string       Pour attriber un nom au log
-	 * @return			                 bool         Retour de la commande
-	 */
+    public function getLog($_dependancy='')
+    {
+        /**
+         * Récupère le log du cron sur l'appareil distant
+         *
+         * @param			$_dependancy     string       Pour attriber un nom au log
+         * @return			                 bool         Retour de la commande
+         */
         $name = $this->getName();
-		$local = dirname(__FILE__) . '/../../../../log/hdsentinel_log_'.str_replace(' ','-',$name).$_dependancy;
-		log::add(__CLASS__,'info','Suppression de la log ' . $local);
-		exec('rm -f '. $local);
-		log::add(__CLASS__,'info',__('Récupération de la log distante',__FILE__));
-		if ($this->getFiles($local,'/tmp/hdsentinel_log'.$_dependancy)) {
-			$this->sendSshCmd(['cat /dev/null > /tmp/hdsentinel_log'.$_dependancy]);
-			return true;
-		}
-		return false;
-	}
+        $local = dirname(__FILE__) . '/../../../../log/hdsentinel_log_'.str_replace(' ', '-', $name).$_dependancy;
+        log::add(__CLASS__, 'info', 'Suppression de la log ' . $local);
+        exec('rm -f '. $local);
+        log::add(__CLASS__, 'info', __('Récupération de la log distante', __FILE__));
+        if ($this->getFiles($local, '/tmp/hdsentinel_log'.$_dependancy)) {
+            $this->sendSshCmd(['cat /dev/null > /tmp/hdsentinel_log'.$_dependancy]);
+            return true;
+        }
+        return false;
+    }
 
-    public function sendFile() {
-	/**
-	 * Envoi les scripts du cron et d'installation 
-	 *
-	 * @param			|*Cette fonction ne retourne pas de valeur*|
-	 * @return			$result        array         Résultat des 2 scripts envoyés
-	 */
+    public function sendFile()
+    {
+        /**
+         * Envoi les scripts du cron et d'installation
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         * @return			$result        array         Résultat des 2 scripts envoyés
+         */
         $result = array();
-        log::add(__CLASS__, 'debug', __('Envoi de fichier ',__FILE__) . $this->getName());
-		$script_path = dirname(__FILE__) . '/../../ressources/';
+        log::add(__CLASS__, 'debug', __('Envoi de fichier ', __FILE__) . $this->getName());
+        $script_path = dirname(__FILE__) . '/../../ressources/';
 
-		log::add(__CLASS__,'info','Création du dossier des scripts');
-		$result['dir'] = $this->sendSshCmd(['/usr/bin/mkdir /home/'.$this->getConfiguration('user') . '; /usr/bin/echo $?;']);
+        log::add(__CLASS__, 'info', 'Création du dossier des scripts');
+        $result['dir'] = $this->sendSshCmd(['/usr/bin/mkdir /home/'.$this->getConfiguration('user') . '; /usr/bin/echo $?;']);
 
-        log::add(__CLASS__,'info','Envoi du fichier  '.$script_path.'hdsentinel_to_jeedom_pub.sh');
-  		if ($this->sendSshFiles($script_path.'hdsentinel_to_jeedom_pub.sh','/home/'.$this->getConfiguration('user').'/hdsentinel_to_jeedom_pub.sh')) {
-			$result['publish'] = $this->sendSshCmd(['ls /home/'.$this->getConfiguration('user').'/hdsentinel_to_jeedom_pub.sh | wc -l']);
+        log::add(__CLASS__, 'info', 'Envoi du fichier  '.$script_path.'hdsentinel_to_jeedom_pub.sh');
+        if ($this->sendSshFiles($script_path.'hdsentinel_to_jeedom_pub.sh', '/home/'.$this->getConfiguration('user').'/hdsentinel_to_jeedom_pub.sh')) {
+            $result['publish'] = $this->sendSshCmd(['ls /home/'.$this->getConfiguration('user').'/hdsentinel_to_jeedom_pub.sh | wc -l']);
         }
 
-		log::add(__CLASS__,'info','Envoi du fichier  '.$script_path.'install_apt.sh');
-  		if ($this->sendSshFiles($script_path.'install_apt.sh','/home/'.$this->getConfiguration('user').'/install_apt.sh')) {
-			$result['install'] = $this->sendSshCmd(['ls /home/'.$this->getConfiguration('user').'/install_apt.sh | wc -l']);
+        log::add(__CLASS__, 'info', 'Envoi du fichier  '.$script_path.'install_apt.sh');
+        if ($this->sendSshFiles($script_path.'install_apt.sh', '/home/'.$this->getConfiguration('user').'/install_apt.sh')) {
+            $result['install'] = $this->sendSshCmd(['ls /home/'.$this->getConfiguration('user').'/install_apt.sh | wc -l']);
         }
         return $result;
     }
 
-	public function getFiles($_local, $_target) {
-	/**
-	 * Récupère un fichier à un emplacement donné
-	 *
-	 * @param			$_local        string        Emplacement distant
-	 * @param			$_target       string        Emplacement local
-	 * @return			               bool          Vrai
-	 */
-		if (!$connection = ssh2_connect($this->getConfiguration('addressip'), $this->getConfiguration('portssh'))) {
-			log::add(__CLASS__, 'error', 'connexion SSH KO for ' . $this->getName());
-				return false;
-		} else {
-			if (!ssh2_auth_password($connection, $this->getConfiguration('user'), $this->getConfiguration('password'))) {
-				log::add(__CLASS__, 'error', 'Authentification SSH KO for ' . $this->getName());
-				return false;
-			} else {
-				log::add(__CLASS__, 'info', __('Récupération de fichier depuis ',__FILE__) . $ip);
-				$result = ssh2_scp_recv($connection, $_target, $_local);
-				$execmd = "echo '" . $pass . "' | sudo -S " . 'exit';
-				$stream = ssh2_exec($connection, $execmd);
-				$errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
-				stream_set_blocking($errorStream, true);
-				stream_set_blocking($stream, true);
-				$output = stream_get_contents($stream);
-				fclose($stream);
-				fclose($errorStream);
-				if (trim($output) != '') {
-					log::add(__CLASS__,'debug',$output);
-				}
-			}
-		}
-		return true;
-	}
-      
-	public function sendSshFiles($_local, $_target) {
-	/**
-	 * Envoie un fichier à un emplacement donné
-	 *
-	 * @param			$_local        string        Emplacement distant
-	 * @param			$_target       string        Emplacement local
-	 * @return			               bool          Vrai
-	 */
-		if (!$connection = ssh2_connect($this->getConfiguration('addressip'), $this->getConfiguration('portssh'))) {
-			log::add(__CLASS__, 'debug', __('Connexion SSH KO pour ',__FILE__) . $this->getName());
-			return false;
-		} else {
-			if (!ssh2_auth_password($connection, $this->getConfiguration('user'), $this->getConfiguration('password'))) {
-				log::add(__CLASS__, 'error', __('Authentification SSH KO pour ',__FILE__) . $this->getName());
-				return false;
-			} else {
-				$result = ssh2_scp_send($connection, $_local, $_target, 0777);
-				if (!$result){
-					log::add(__CLASS__,'error',__('Erreur d\'envoi du fichier sur ',__FILE__) . $this->getConfiguration('addressip'));
-					return false;
-				} else {
-					log::add(__CLASS__,'info',__('Fichier envoyé avec succès sur ',__FILE__) . $this->getConfiguration('addressip'));
-				}
-				$stream = ssh2_exec($connection, 'exit');
-				$errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
-				stream_set_blocking($errorStream, true);
-				stream_set_blocking($stream, true);
-				$output = stream_get_contents($stream);
-				fclose($stream);
-				fclose($errorStream);
-				if (trim($output) != '') {
-					log::add(__CLASS__,'debug',$output);
-				}
-			}
-		}
-		return true;
-	}
+    public function getFiles($_local, $_target)
+    {
+        /**
+         * Récupère un fichier à un emplacement donné
+         *
+         * @param			$_local        string        Emplacement distant
+         * @param			$_target       string        Emplacement local
+         * @return			               bool          Vrai
+         */
+        if (!$connection = ssh2_connect($this->getConfiguration('addressip'), $this->getConfiguration('portssh'))) {
+            log::add(__CLASS__, 'error', 'connexion SSH KO for ' . $this->getName());
+            return false;
+        } else {
+            if (!ssh2_auth_password($connection, $this->getConfiguration('user'), $this->getConfiguration('password'))) {
+                log::add(__CLASS__, 'error', 'Authentification SSH KO for ' . $this->getName());
+                return false;
+            } else {
+                log::add(__CLASS__, 'info', __('Récupération de fichier depuis ', __FILE__) . $ip);
+                $result = ssh2_scp_recv($connection, $_target, $_local);
+                $execmd = "echo '" . $pass . "' | sudo -S " . 'exit';
+                $stream = ssh2_exec($connection, $execmd);
+                $errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
+                stream_set_blocking($errorStream, true);
+                stream_set_blocking($stream, true);
+                $output = stream_get_contents($stream);
+                fclose($stream);
+                fclose($errorStream);
+                if (trim($output) != '') {
+                    log::add(__CLASS__, 'debug', $output);
+                }
+            }
+        }
+        return true;
+    }
 
-    public function sendSshCmd($_cmd) {
-	/**
-	 * Envoie de commandes à l'appareil distant
-	 *
-	 * @param			$_cmd        array       Tableau des commandes à envoyer
-	 * @return			             string      Retour de la commande
-	 */
-		if (!$connection = ssh2_connect($this->getConfiguration('addressip'), $this->getConfiguration('portssh'))) {
-			log::add(__CLASS__, 'debug', __('Connexion SSH KO pour ',__FILE__) . $this->getName());
-			return false;
-		} else {
-			if (!ssh2_auth_password($connection, $this->getConfiguration('user'), $this->getConfiguration('password'))) {
-				log::add(__CLASS__, 'error', __('Authentification SSH KO pour ',__FILE__) . $this->getName());
-				return false;
-			} else {
-				foreach ($_cmd as $cmd){
-					log::add(__CLASS__, 'info', __('Commande par SSH ',__FILE__) . $cmd .  __(' sur ',__FILE__) . $this->getConfiguration('addressip'));
-					//$execmd = "echo '" . $this->getConfiguration('password') . "' | sudo -S " . $cmd;
-					$execmd = $cmd;
-					$stream = ssh2_exec($connection, $execmd);
-					$errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
-					stream_set_blocking($errorStream, true);
-					stream_set_blocking($stream, true);
-					$output = stream_get_contents($stream);
-					//$output = stream_get_contents($stream) . ' ' . stream_get_contents($errorStream);
-					fclose($stream);
-					fclose($errorStream);
-					if (trim($output) != '') {
-						log::add(__CLASS__,'debug',$output);
-					}
-				}
-				$stream = ssh2_exec($connection, 'exit');
-				$errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
-				stream_set_blocking($errorStream, true);
-				stream_set_blocking($stream, true);
-				//$output = stream_get_contents($stream) . ' ' . stream_get_contents($errorStream);
-				fclose($stream);
-				fclose($errorStream);
+    public function sendSshFiles($_local, $_target)
+    {
+        /**
+         * Envoie un fichier à un emplacement donné
+         *
+         * @param			$_local        string        Emplacement distant
+         * @param			$_target       string        Emplacement local
+         * @return			               bool          Vrai
+         */
+        if (!$connection = ssh2_connect($this->getConfiguration('addressip'), $this->getConfiguration('portssh'))) {
+            log::add(__CLASS__, 'debug', __('Connexion SSH KO pour ', __FILE__) . $this->getName());
+            return false;
+        } else {
+            if (!ssh2_auth_password($connection, $this->getConfiguration('user'), $this->getConfiguration('password'))) {
+                log::add(__CLASS__, 'error', __('Authentification SSH KO pour ', __FILE__) . $this->getName());
+                return false;
+            } else {
+                $result = ssh2_scp_send($connection, $_local, $_target, 0777);
+                if (!$result) {
+                    log::add(__CLASS__, 'error', __('Erreur d\'envoi du fichier sur ', __FILE__) . $this->getConfiguration('addressip'));
+                    return false;
+                } else {
+                    log::add(__CLASS__, 'info', __('Fichier envoyé avec succès sur ', __FILE__) . $this->getConfiguration('addressip'));
+                }
+                $stream = ssh2_exec($connection, 'exit');
+                $errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
+                stream_set_blocking($errorStream, true);
+                stream_set_blocking($stream, true);
+                $output = stream_get_contents($stream);
+                fclose($stream);
+                fclose($errorStream);
+                if (trim($output) != '') {
+                    log::add(__CLASS__, 'debug', $output);
+                }
+            }
+        }
+        return true;
+    }
 
-				return trim($output);
-			}
-		}
+    public function sendSshCmd($_cmd)
+    {
+        /**
+         * Envoie de commandes à l'appareil distant
+         *
+         * @param			$_cmd        array       Tableau des commandes à envoyer
+         * @return			             string      Retour de la commande
+         */
+        if (!$connection = ssh2_connect($this->getConfiguration('addressip'), $this->getConfiguration('portssh'))) {
+            log::add(__CLASS__, 'debug', __('Connexion SSH KO pour ', __FILE__) . $this->getName());
+            return false;
+        } else {
+            if (!ssh2_auth_password($connection, $this->getConfiguration('user'), $this->getConfiguration('password'))) {
+                log::add(__CLASS__, 'error', __('Authentification SSH KO pour ', __FILE__) . $this->getName());
+                return false;
+            } else {
+                foreach ($_cmd as $cmd) {
+                    log::add(__CLASS__, 'info', __('Commande par SSH ', __FILE__) . $cmd .  __(' sur ', __FILE__) . $this->getConfiguration('addressip'));
+                    //$execmd = "echo '" . $this->getConfiguration('password') . "' | sudo -S " . $cmd;
+                    $execmd = $cmd;
+                    $stream = ssh2_exec($connection, $execmd);
+                    $errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
+                    stream_set_blocking($errorStream, true);
+                    stream_set_blocking($stream, true);
+                    $output = stream_get_contents($stream);
+                    //$output = stream_get_contents($stream) . ' ' . stream_get_contents($errorStream);
+                    fclose($stream);
+                    fclose($errorStream);
+                    if (trim($output) != '') {
+                        log::add(__CLASS__, 'debug', $output);
+                    }
+                }
+                $stream = ssh2_exec($connection, 'exit');
+                $errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
+                stream_set_blocking($errorStream, true);
+                stream_set_blocking($stream, true);
+                //$output = stream_get_contents($stream) . ' ' . stream_get_contents($errorStream);
+                fclose($stream);
+                fclose($errorStream);
+
+                return trim($output);
+            }
+        }
         return false;
     }
 }
 
-class hdsentinelCmd extends cmd {
+class hdsentinelCmd extends cmd
+{
+    public static $_widgetPossibility = array('custom' => false);
 
-	public static $_widgetPossibility = array('custom' => false);
+    public function execute($_options = null)
+    {
+        $eqLogic = $this->getEqLogic();
+        if ($this->getLogicalId() == '') {
+            $paramaction = $this->getId();
+        } else {
+            $paramaction = $this->getLogicalId();
+        }
 
-	public function execute($_options = null) {
-		$eqLogic = $this->getEqLogic();
-		if ($this->getLogicalId() == '') {
-			$paramaction = $this->getId();
-		} else {
-			$paramaction = $this->getLogicalId();
-		}
-
-		switch ($this->getType()) {
-			case 'info' :
-				log::add('hdsentinel','debug',__('TYPE info ',__FILE__));
-				break;
-			case 'action' :
-				log::add('hdsentinel','debug',__('TYPE action ',__FILE__). $paramaction . ' avec option : '.$_options );
-				break;
-			default :
-				log::add('hdsentinel','debug',__('TYPE autre : ',__FILE__));
-				break;
-		}
-		return true;
-	}
+        switch ($this->getType()) {
+            case 'info':
+                log::add('hdsentinel', 'debug', __('TYPE info ', __FILE__));
+                break;
+            case 'action':
+                log::add('hdsentinel', 'debug', __('TYPE action ', __FILE__). $paramaction . ' avec option : '.$_options);
+                break;
+            default:
+                log::add('hdsentinel', 'debug', __('TYPE autre : ', __FILE__));
+                break;
+        }
+        return true;
+    }
 }
-?>
