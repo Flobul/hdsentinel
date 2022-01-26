@@ -20,6 +20,27 @@ if (!isConnect('admin')) {
 }
 $eqLogics = hdsentinel::byType('hdsentinel');
 ?>
+<style>
+    .tab-pane > table > tbody > tr > td:nth-child(2) {
+        display: none;
+    }
+    [data-theme="core2019_Dark"] .grayhead {
+        background: #343434 !important;
+        color: #000 !important;
+    }
+    [data-theme="core2019_Dark"] .colorhead {
+        background: #6b6b6b !important
+    }
+    [data-theme="core2019_Dark"] .xboxcontent,
+    [data-theme="core2019_Dark"] .xb2,
+    [data-theme="core2019_Dark"] .xb3,
+    [data-theme="core2019_Dark"] .xb4 {
+        background: #999 !important;
+    }
+    [data-theme="core2019_Dark"] TD {
+        color: #c1c1c1 !important;
+    }
+</style>
 
 <ul class="nav nav-tabs" role="tablist">
 	    <?php
