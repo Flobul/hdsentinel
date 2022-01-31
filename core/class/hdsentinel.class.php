@@ -48,8 +48,12 @@ class hdsentinel extends eqLogic
             $eqLogic->setIsEnable(1);
         }
         utils::a2o($eqLogic, $array);
-        $eqLogic->save();
-
+        try {
+            $eqLogic->save();
+        } catch(Exception $e) {
+            $eqLogic->setName($eqLogic->getName().' '.config::genKey(3));
+            $eqLogic->save();
+        }
         $disk = array();
         for ($i = 0; $i <= 10; $i++) {
             if (array_key_exists('Physical_Disk_Information_Disk_'.$i, $_xml)) {

@@ -6,7 +6,7 @@
 #############################
 # DECLARATION DES VARIABLES #
 #############################
-SCRIPT_VERSION='0.26'
+SCRIPT_VERSION='0.27'
 
 #############################
 # DECLARATION DES FONCTIONS #
@@ -42,7 +42,7 @@ function retour_erreur ()
 {
   CODE_ERREUR=$?
   echo $1 "error code $CODE_ERREUR: Trying insecure http"
-  if [[ ${CODE_ERREUR} -eq 60 && $1 -eq curl ]]; then
+  if [[ ${CODE_ERREUR} -eq 60 || ${CODE_ERREUR} -eq 0  && $1 -eq curl ]]; then
     /usr/bin/curl -i ${URL_API}'?apikey='${API} -k --form file=@/tmp/hdsentinel.${OUTPUT} --header "Content-Type:text/${OUTPUT};charset=UTF-8"
   elif [[ ${CODE_ERREUR} -eq 5 && $1 -eq wget ]]; then
     /usr/bin/wget ${URL_API}'?apikey='${API} --no-check-certificate --post-file=/tmp/hdsentinel.${OUTPUT} --header='Content-Type:text/${OUTPUT};charset=UTF-8'
