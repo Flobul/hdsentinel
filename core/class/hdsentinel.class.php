@@ -20,7 +20,7 @@ require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 
 class hdsentinel extends eqLogic
 {
-    public static $_hdsentinelVersion = '0.80';
+    public static $_hdsentinelVersion = '0.81';
 
     public static function getApiXmlResult($_xml, $_ip)
     {
