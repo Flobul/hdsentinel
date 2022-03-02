@@ -53,8 +53,7 @@ sendVarToJS('version', hdsentinel::$_hdsentinelVersion);
 				?>
 				<div class="col-lg-5">
 				<div>
-					<i><a class="btn btn-primary btn-xs" target="_blank" href="https://flobul-domotique.fr/presentation-du-plugin-hdsentinel-pour-jeedom/"><i class="fas fa-book"></i><strong> Présentation du plugin</strong></a></i>
-					<i><a class="btn btn-success btn-xs" target="_blank" href="<?=$plugin->getDocumentation()?>"><i class="fas fa-book"></i><strong> Documentation complète du plugin</strong></a></i>
+					<i><a class="btn btn-success btn-xs" target="_blank" href="<?=$plugin->getDocumentation()?>"><i class="fas fa-book"></i><strong> Présentation et documentation du plugin</strong></a></i>
 				</div>
 				<div>
 					<i> Les dernières actualités du plugin <a class="btn btn-label btn-xs" target="_blank" href="https://community.jeedom.com/t/plugin-hdsentinel-documentation-et-actualites/39994"><i class="icon jeedomapp-home-jeedom icon-hdsentinel"></i><strong> sur le community</strong></a>.</i>
