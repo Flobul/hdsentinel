@@ -60,7 +60,7 @@ sendVarToJS('version', hdsentinel::$_hdsentinelVersion);
 				</div>
 				<div>
 					<i> Les dernières discussions autour du plugin <a class="btn btn-label btn-xs" target="_blank" href="https://community.jeedom.com/tags/plugin-hdsentinel"><i class="icon jeedomapp-home-jeedom icon-hdsentinel"></i><strong> sur le community</strong></a>.</i></br>
-					<i> Pensez à mettre le tag <b><font font-weight="nold" size="+1">#plugin-hdsentinel</font></b> et à fournir les log dans les balises préformatées.</i>
+					<i> Pensez à mettre le tag <strong style="font-size:1.5em">#plugin-hdsentinel</strong> et à fournir les log dans les balises préformatées.</i>
 				</div>
 				<style>
 					.icon-hdsentinel {

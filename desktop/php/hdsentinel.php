@@ -12,7 +12,8 @@ $eqLogics = eqLogic::byType($plugin->getId());
   .classinfoEqlogic {
       border-radius:10px;
       padding:1px 3px;
-      font-size:1em;
+      font-size:.75em;
+			font-weight:900;
       position:absolute;
       margin-left:57px;
       color:white;

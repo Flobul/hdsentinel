@@ -21,7 +21,7 @@ $('body').delegate('#bt_pluginDisplayAsTable[data-coreSupport="1"]', 'click', fu
 });
 
 function prettyPrintDisplayAsTable() {
-  
+
   if (getCookie('jeedom_displayAsTable') == 'true' || jeedom.theme.theme_displayAsTable == 1){
     $('#accordionObject > div.objectSortable').removeClass(function (index, css) {
       return (css.match (/\bcol-xs-\S+/g) || []).join(' ');
@@ -46,18 +46,6 @@ $('#bt_pageSentinel').on('click', function () {
   $('#md_modal').load('index.php?v=d&plugin=hdsentinel&modal=page').dialog('open');
 });
 
-
-
-/*$('.hdsentinelAction').on('click', function () {
-  if ($('.eqLogicAttr[data-l1key=configuration][data-l2key=addressip]').value() == ''
-      || $('.eqLogicAttr[data-l1key=configuration][data-l2key=portssh]').value() == ''
-      || $('.eqLogicAttr[data-l1key=configuration][data-l2key=user]').value() == ''
-      || $('.eqLogicAttr[data-l1key=configuration][data-l2key=password]').value() == '' ) {
-    $('#div_alert').showAlert({message: '{{Veuillez entrer l\'adresse IP, le port, l\'identifiant et le mot de passe}}', level: 'danger'});
-    return;
-  }
-});
-*/
 $("#table_cmd").sortable({
     axis: "y",
     cursor: "move",
@@ -85,7 +73,7 @@ function refreshStatusMode(_id) {
                 $('#div_alert').showAlert({message: data.result, level: 'danger'});
                 return;
             }
-            if (data.result == true ) {
+            if (data.result) {
                 $('.hdsentinelAction[data-action=checkremotecron]').removeClass('btn-danger').addClass('btn-success');
                 $('.hdsentinelAction[data-action=checkremotecron]').html('<span class="label label-success btn-xs">{{Lancé}}</span>');
                 $('.hdsentinelAction[data-action=launchCron]').hide();
@@ -301,8 +289,6 @@ function printEqLogic(_eqLogic) {
   printEqLogicHelper("{{ID du processus}}", "Process_ID", _eqLogic);
   printEqLogicHelper("{{Démarré depuis}}", "Uptime", _eqLogic);
 
-  //refreshStatusMode(_eqLogic);
-
   if ($('.eqLogicAttr[data-l1key=configuration][data-l2key=addressip]').value() == ''
       || $('.eqLogicAttr[data-l1key=configuration][data-l2key=portssh]').value() == ''
       || $('.eqLogicAttr[data-l1key=configuration][data-l2key=user]').value() == ''
@@ -318,7 +304,7 @@ function printEqLogic(_eqLogic) {
     $('.hdsentinelAction[data-action=stopremote]').hide();
     $('.hdsentinelAction[data-action=changeAutoModeRemote]').removeClass('btn-success').addClass('btn-danger');
     $('.hdsentinelAction[data-action=changeAutoModeRemote]').html('<i class="fas fa-times"></i> {{Désactiver}}');
-  }else{
+  } else{
     $('.hdsentinelAction[data-action=stopremote]').show();
     $('.hdsentinelAction[data-action=changeAutoModeRemote]').removeClass('btn-danger').addClass('btn-success');
     $('.hdsentinelAction[data-action=changeAutoModeRemote]').html('<i class="fas fa-magic"></i> {{Activer}}');
@@ -336,7 +322,7 @@ function printEqLogic(_eqLogic) {
           handleAjaxError(request, status, error);
       },
       success: function (data) { // si l'appel a bien fonctionné
-          if (data.state != 'ok' | !data.result) {
+          if (data.state != 'ok' || !data.result) {
               $('#img_device').attr("src", 'plugins/hdsentinel/plugin_info/hdsentinel_icon.png');
               return;
           }
@@ -395,7 +381,7 @@ function addCmdToTable(_cmd) {
 		$('#table_cmd tbody').append(tr);
 		$('#table_cmd tbody tr:last').setValues(_cmd, '.cmdAttr');
 		jeedom.cmd.changeType($('#table_cmd tbody tr:last'), init(_cmd.subType));
-    
+
 }
 
 function printEqLogicHelper(_label, _name, _eqLogic) {
