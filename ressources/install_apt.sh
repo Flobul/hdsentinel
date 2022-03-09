@@ -1,14 +1,15 @@
 #!/bin/bash
 # Contributor: Flobul <flobul.jeedom@gmail.com>
 
-SCRIPT_VERSION='0.12'
+SCRIPT_VERSION='0.13'
 
 function main ()
 {
   echo 10 "Vérification du système" $1
   arch=`arch`;
+  pwd=`pwd`;
   bits=$(getconf LONG_BIT);
-  if command_check $uncompress ; then 
+  if command_check "gzip" ; then
     uncompress="gzip";
   else
     apt install gzip -f
@@ -22,7 +23,7 @@ function main ()
     echo 100 "Installation annulée";
     exit 1
   fi
-  echo "ARCH="$arch"; BITS:"$bits;
+  echo "ARCH="$arch"; BITS="$bits"; USER="$USER"; PWD="$pwd;
 
   echo 50 "Récupération URL"
   if [ "$arch" == "armv6l" ]
@@ -54,10 +55,12 @@ function main ()
   echo 80 "Téléchargement et installation"
   if [ "$uncompress" == "none" ]
   then
-    wget -q -O /usr/bin/hdsentinel "$url";
+    wget -O /usr/bin/hdsentinel "$url";
   else
-    wget -q -O /tmp/hdsentinel.$extension "$url";
-    bash -c "$uncompress -c /tmp/hdsentinel.$extension > /usr/bin/hdsentinel"
+    wget -O $pwd/hdsentinel.$extension "$url";
+    bash -c "$uncompress -d $pwd/hdsentinel.$extension"
+    mv $pwd/hdsentinel /usr/bin/hdsentinel
+    ##rm $pwd/hdsentinel.$extension
   fi
   chmod +x /usr/bin/hdsentinel;
   end=" en erreur";
