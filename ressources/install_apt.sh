@@ -1,7 +1,7 @@
 #!/bin/bash
 # Contributor: Flobul <flobul.jeedom@gmail.com>
 
-SCRIPT_VERSION='0.13'
+SCRIPT_VERSION='0.14'
 
 function main ()
 {
@@ -9,7 +9,7 @@ function main ()
   arch=`arch`;
   pwd=`pwd`;
   bits=$(getconf LONG_BIT);
-  if command_check "gzip" ; then
+  if command_check $uncompress ; then
     uncompress="gzip";
   else
     apt install gzip -f
@@ -55,17 +55,17 @@ function main ()
   echo 80 "Téléchargement et installation"
   if [ "$uncompress" == "none" ]
   then
-    wget -O /usr/bin/hdsentinel "$url";
+    wget -O /usr/local/bin/hdsentinel "$url";
   else
     wget -O $pwd/hdsentinel.$extension "$url";
     bash -c "$uncompress -d $pwd/hdsentinel.$extension"
-    mv $pwd/hdsentinel /usr/bin/hdsentinel
+    mv $pwd/hdsentinel /usr/local/bin/hdsentinel
     ##rm $pwd/hdsentinel.$extension
   fi
-  chmod +x /usr/bin/hdsentinel;
+  chmod +x /usr/local/bin/hdsentinel;
   end=" en erreur";
 
-  if [ -f /usr/bin/hdsentinel ]
+  if [ -f /usr/local/bin/hdsentinel ]
     then
     end=" avec succès"
   fi
