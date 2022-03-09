@@ -23,7 +23,6 @@ if (!isConnect()) {
 	die();
 }
 
-$paquetBridges = 3;
 $plugin = plugin::byId('hdsentinel');
 sendVarToJS('version', hdsentinel::$_hdsentinelVersion);
 

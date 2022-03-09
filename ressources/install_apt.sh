@@ -1,14 +1,18 @@
 #!/bin/bash
 # Contributor: Flobul <flobul.jeedom@gmail.com>
 
-SCRIPT_VERSION='0.11'
+SCRIPT_VERSION='0.12'
 
 function main ()
 {
   echo 10 "Vérification du système" $1
   arch=`arch`;
   bits=$(getconf LONG_BIT);
-  uncompress="gunzip";
+  if command_check $uncompress ; then 
+    uncompress="gzip";
+  else
+    apt install gzip -f
+  fi
 
   hash hdsentinel 2>/dev/null;
   if [ $? -eq 0 ] && [ ! "$1" = "force" ]
@@ -68,6 +72,15 @@ function main ()
 function usage()
 {
     echo "usage: $(basename $0) [-v|--version] [-h|--help] [-f|--force]"
+}
+
+function command_check ()
+{
+  if command -v $1 > /dev/null; then
+    return 0
+  else
+    return 1
+  fi
 }
 
 if [[ ( $@ == "--help") || ( $@ == "-h" ) ]];
