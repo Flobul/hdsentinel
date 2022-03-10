@@ -43,7 +43,7 @@ try {
 		}
 		ajax::success($eqLogic->sendFile());
     }
-  
+
 	if (init('action') == 'installDependancy') {
 		$eqLogic = hdsentinel::byId(init('id'));
 		if (!is_object($eqLogic)) {
@@ -75,7 +75,7 @@ try {
 		}
 		ajax::success($eqLogic->statusCron());
     }
-  
+
 	if (init('action') == 'launchCron') {
 		$eqLogic = hdsentinel::byId(init('id'));
 		if (!is_object($eqLogic)) {
@@ -83,7 +83,7 @@ try {
 		}
 		ajax::success($eqLogic->launchCron());
     }
-  
+
 	if (init('action') == 'removeCron') {
 		$eqLogic = hdsentinel::byId(init('id'));
 		if (!is_object($eqLogic)) {
@@ -108,6 +108,14 @@ try {
 		ajax::success($eqLogic->createCron());
     }
 
+	if (init('action') == 'test') {
+		$eqLogic = hdsentinel::byId(init('id'));
+		if (!is_object($eqLogic)) {
+			throw new Exception(__('getLog Remote inconnu : ', __FILE__) . init('id'), 9999);
+		}
+		ajax::success($eqLogic->test());
+    }
+
 	if (init('action') == 'all') {
         $result = array();
 		foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
@@ -129,7 +137,7 @@ try {
         }
         ajax::success($result);
     }
-  
+
 	throw new Exception('Aucune methode correspondante');
 	/*     * *********Catch exeption*************** */
 } catch (Exception $e) {

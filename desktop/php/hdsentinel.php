@@ -248,12 +248,18 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                 <div class="col-sm-2">
                                     <a class="btn btn-success hdsentinelAction" data-action="getLog"><i class="far fa-file-alt"></i> {{Log}}</a>
                                 </div>
-                                </div>
-                                <div class="form-group">
+                            </div>
+                            <div class="form-group">
                                 <label class="col-sm-3 control-label">{{Gestion du cron automatique}}</label>
                                 <div class="col-sm-2">
                                     <a class="btn btn-danger hdsentinelAction" data-action="changeAutoModeRemote"></a>
                                     <input type="hidden" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="remoteDaemonAuto"/>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">{{Tester}}</label>
+                                <div class="col-sm-2">
+                                    <a class="btn btn-success hdsentinelAction" data-action="test"><i class="far fa-file-alt"></i> {{Tester}}</a>
                                 </div>
                             </div>
 

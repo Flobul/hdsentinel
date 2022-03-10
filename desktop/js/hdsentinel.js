@@ -276,6 +276,29 @@ $('.hdsentinelAction[data-action=changeAutoModeRemote]').on('click',function(){
     $('.eqLogicAction[data-action=save]').click();
 });
 
+$('.hdsentinelAction[data-action=test]').on('click', function () {
+    var id = $('.eqLogicAttr[data-l1key=id]').value();
+    $.ajax({
+        type: "POST",
+        url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
+        data: {
+            action: "test",
+            id: id
+        },
+        dataType: 'json',
+        error: function (request, status, error) {
+            handleAjaxError(request, status, error,$('#div_alert'));
+        },
+        success: function (data) {
+            if (data.state != 'ok') {
+                $('#div_alert').showAlert({message: data.result, level: 'danger'});
+                return;
+            }
+            console.log(data)
+        }
+    });
+});
+
 function printEqLogic(_eqLogic) {
 
   $('#table_infoseqlogic tbody').empty();

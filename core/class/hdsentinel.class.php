@@ -218,6 +218,10 @@ class hdsentinel extends eqLogic
     public function getHtmlDisksFullResult()
     {
         $plugin = plugin::byId('hdsentinel');
+        $cmd = '';
+        if ($this->getConfiguration('user') != 'root') {
+            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
+        }
         $cmd ='/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
@@ -646,6 +650,30 @@ class hdsentinel extends eqLogic
             }
         }
         return false;
+    }
+
+    public function test()
+    {
+        /**
+         * Teste un envoie du XML complet, du coup, permet de générer les commandes
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         *       			|*Cette fonction ne retourne pas de valeur*|
+         */
+        log::add(__CLASS__, 'info', __('Test de la commande', __FILE__));
+        $plugin = plugin::byId('hdsentinel');
+        $cmd = '';
+        if ($this->getConfiguration('user') != 'root') {
+            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
+        }
+        $cmd .= '/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
+        $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
+        $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
+        $cmd .= ' -o xml';
+        //$cmd .= ' >> /tmp/hdsentinel_log 2>&1 &"';
+        $return = $this->sendSshCmd([$cmd]);
+        log::add(__CLASS__, 'info', __('Test de la commande - résultat : ', __FILE__) . $return);
+        return $return;
     }
 }
 
