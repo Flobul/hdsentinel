@@ -20,7 +20,7 @@ require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 
 class hdsentinel extends eqLogic
 {
-    public static $_hdsentinelVersion = '0.81';
+    public static $_hdsentinelVersion = '0.82';
 
     public static function getApiXmlResult($_xml, $_ip)
     {
@@ -396,7 +396,11 @@ class hdsentinel extends eqLogic
          */
         log::add(__CLASS__, 'info', __('Suppression du cron distant', __FILE__));
         $cmd1 = "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
-        $cmd2 = "rm /etc/cron.daily/hdsentinel; echo $?;";
+        $cmd2 = '';
+        if ($this->getConfiguration('user') != 'root') {
+            $cmd2 .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
+        }
+        $cmd2 .= "rm /etc/cron.daily/hdsentinel; echo $?;";
         return $this->sendSshCmd([$cmd1,$cmd2]);
     }
 
@@ -409,7 +413,11 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Arrêt du cron distant', __FILE__));
-        $cmd = "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
+        $cmd = '';
+        if ($this->getConfiguration('user') != 'root') {
+            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
+        }
+        $cmd .= "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
         return $this->sendSshCmd([$cmd]);
     }
 
@@ -423,7 +431,11 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Statut du cron distant', __FILE__));
-        $cmd = 'crontab -l | grep hdsentinel_to_jeedom_pub | wc -l';
+        $cmd = '';
+        if ($this->getConfiguration('user') != 'root') {
+            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
+        }
+        $cmd .= 'crontab -l | grep hdsentinel_to_jeedom_pub | wc -l';
         return $this->sendSshCmd([$cmd]);
     }
 
@@ -436,7 +448,11 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Installation des dépendances', __FILE__));
-        $cmd = 'bash /home/'.$this->getConfiguration("user").'/install_apt.sh  >> ' . '/tmp/hdsentinel_dependancy' . ' 2>&1 &';
+        $cmd = '';
+        if ($this->getConfiguration('user') != 'root') {
+            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
+        }
+        $cmd .= 'bash /home/'.$this->getConfiguration('user').'/install_apt.sh  >> ' . '/tmp/hdsentinel_dependancy' . ' 2>&1 &';
         return $this->sendSshCmd([$cmd]);
     }
 
@@ -504,6 +520,14 @@ class hdsentinel extends eqLogic
         if ($this->sendSshFiles($script_path.'install_apt.sh', '/home/'.$this->getConfiguration('user').'/install_apt.sh')) {
             $result['install'] = $this->sendSshCmd(['ls /home/'.$this->getConfiguration('user').'/install_apt.sh | wc -l']);
         }
+
+        log::add(__CLASS__, 'info', 'Suppression des anciens log');
+        $cmd = '';
+        if ($this->getConfiguration('user') != 'root') {
+            $cmd = 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
+        }
+        $result['removeLog'] = $this->sendSshCmd([$cmd . 'rm /tmp/hdsentinel_*']);
+
         return $result;
     }
 
