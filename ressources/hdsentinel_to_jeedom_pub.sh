@@ -6,7 +6,8 @@
 #############################
 # DECLARATION DES VARIABLES #
 #############################
-SCRIPT_VERSION='0.27'
+SCRIPT_VERSION='0.28'
+hdsentinel=$(which hdsentinel)
 
 #############################
 # DECLARATION DES FONCTIONS #
@@ -117,7 +118,7 @@ fi
 
 URL_API="${IP}/plugins/hdsentinel/core/api/hdsentinel.php"
 
-result=$(/usr/bin/hdsentinel -"${OUTPUT}" -r /tmp/hdsentinel)
+result=$($hdsentinel -"${OUTPUT}" -r /tmp/hdsentinel)
 
 if [[ ${result} =~ 'No hard disk devices found' ]]; then
     echo "result: disk not found"
@@ -127,7 +128,7 @@ if [[ ${result} =~ 'No hard disk devices found' ]]; then
         disk=$(parted -l | grep 'Disk /dev' | sed -e 's/Disk \(.*\):.*/\1/')
     fi
     echo "disk found: ${disk}"
-    [[ ${disk} != '' ]] && /usr/bin/hdsentinel -dev /dev/"${disk}" -"${OUTPUT}" -r /tmp/hdsentinel
+    [[ ${disk} != '' ]] && $hdsentinel -dev /dev/"${disk}" -"${OUTPUT}" -r /tmp/hdsentinel
 fi
 
 postRequest
