@@ -73,7 +73,8 @@ function refreshStatusMode(_id) {
                 $('#div_alert').showAlert({message: data.result, level: 'danger'});
                 return;
             }
-            if (data.result) {
+
+            if (data.result && data.result == '1') {
                 $('.hdsentinelAction[data-action=checkremotecron]').removeClass('btn-danger').addClass('btn-success');
                 $('.hdsentinelAction[data-action=checkremotecron]').html('<span class="label label-success btn-xs">{{Lancé}}</span>');
                 $('.hdsentinelAction[data-action=launchCron]').hide();

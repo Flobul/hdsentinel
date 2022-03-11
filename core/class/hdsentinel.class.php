@@ -20,7 +20,7 @@ require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 
 class hdsentinel extends eqLogic
 {
-    public static $_hdsentinelVersion = '0.82';
+    public static $_hdsentinelVersion = '0.83';
 
     public static function getApiXmlResult($_xml, $_ip)
     {
@@ -218,10 +218,7 @@ class hdsentinel extends eqLogic
     public function getHtmlDisksFullResult()
     {
         $plugin = plugin::byId('hdsentinel');
-        $cmd = '';
-        if ($this->getConfiguration('user') != 'root') {
-            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
-        }
+        $cmd = $this->getSudoCmd();
         $cmd ='/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
@@ -358,15 +355,39 @@ class hdsentinel extends eqLogic
         log::add(__CLASS__, 'info', __('Début création du cron distant', __FILE__));
         $plugin = plugin::byId('hdsentinel');
         $return = false;
-        $cmd = 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
-        $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
-        $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
-        $cmd .= ' -o xml';
-        $cmd .= ' >> /tmp/hdsentinel_log 2>&1 &"';
-        $cmd .= ' > /etc/cron.daily/hdsentinel';
-        $return = $this->sendSshCmd([$cmd]);
-        log::add(__CLASS__, 'info', __('Fin création du cron distant', __FILE__));
+        //$cmd1 = $this->getSudoCmd() . 'touch /etc/cron.daily/hdsentinel; echo $?';
+        //$cmd2 = $this->getSudoCmd();
+        $cmd2 = '';
+        if ($this->getConfiguration('user') != 'root') {
+            $cmd2 .= 'echo ' . $this->getConfiguration('password') . ' | su -c \'';
+        }
+        $cmd2 .= 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
+        $cmd2 .= ' -a ' . jeedom::getApiKey($plugin->getId());
+        $cmd2 .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
+        $cmd2 .= ' -o xml';
+        $cmd2 .= ' >> /tmp/hdsentinel_log 2>&1 &"';
+        $cmd2 .= ' > /etc/cron.daily/hdsentinel';
+        if ($this->getConfiguration('user') != 'root') {
+            $cmd2 .= '\'';
+        }
+        $return = $this->sendSshCmd([$cmd2]);
+        log::add(__CLASS__, 'info', __('Fin création du cron distant cmd1: ', __FILE__) . $cmd1 . ' + cmd2: ' . $cmd2 . ' = ' . $return);
         return $return;
+    }
+
+    public function getSudoCmd()
+    {
+        /**
+         * Si non root, demande les privilège avant une commande
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         * @return			$return			string		Commande pour élever les privilèges de la commande à envoyer
+         */
+        $cmd = '';
+        if ($this->getConfiguration('user') != 'root') {
+            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
+        }
+        return $cmd;
     }
 
     public function launchCron()
@@ -379,15 +400,15 @@ class hdsentinel extends eqLogic
          */
         log::add(__CLASS__, 'info', __('Début lancement du cron distant', __FILE__));
         if (!$this->sendSshCmd(['ls /etc/cron.daily/hdsentinel | wc -l'])) {
-            log::add(__CLASS__, 'info', __('Création du cron distant', __FILE__));
+            log::add(__CLASS__, 'info', __('Création du cron distant ', __FILE__) . $createFolder);
             $this->createCron();
         }
-        if (!$this->sendSshCmd(['crontab -l | grep hdsentinel_to_jeedom_pub | wc -l'])) {
+        if (!$this->sendSshCmd([$this->getSudoCmd() . 'crontab -l | grep hdsentinel_to_jeedom_pub | wc -l'])) {
             log::add(__CLASS__, 'info', __('Lancement du cron distant', __FILE__));
-            $cmd = 'crontab /etc/cron.daily/hdsentinel; echo $?;';
+            $cmd = $this->getSudoCmd() . 'crontab /etc/cron.daily/hdsentinel; echo $?;';
             return $this->sendSshCmd([$cmd]);
         }
-        return 0;
+        return false;
     }
 
     public function removeCron()
@@ -399,11 +420,9 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Suppression du cron distant', __FILE__));
-        $cmd1 = "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
-        $cmd2 = '';
-        if ($this->getConfiguration('user') != 'root') {
-            $cmd2 .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
-        }
+        $cmd1 = $this->getSudoCmd();
+        $cmd1 .= "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
+        $cmd2 = $this->getSudoCmd();
         $cmd2 .= "rm /etc/cron.daily/hdsentinel; echo $?;";
         return $this->sendSshCmd([$cmd1,$cmd2]);
     }
@@ -417,10 +436,7 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Arrêt du cron distant', __FILE__));
-        $cmd = '';
-        if ($this->getConfiguration('user') != 'root') {
-            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
-        }
+        $cmd = $this->getSudoCmd();
         $cmd .= "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
         return $this->sendSshCmd([$cmd]);
     }
@@ -435,10 +451,7 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Statut du cron distant', __FILE__));
-        $cmd = '';
-        if ($this->getConfiguration('user') != 'root') {
-            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
-        }
+        $cmd = $this->getSudoCmd();
         $cmd .= 'crontab -l | grep hdsentinel_to_jeedom_pub | wc -l';
         return $this->sendSshCmd([$cmd]);
     }
@@ -452,10 +465,7 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Installation des dépendances', __FILE__));
-        $cmd = '';
-        if ($this->getConfiguration('user') != 'root') {
-            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
-        }
+        $cmd = $this->getSudoCmd();
         $cmd .= 'bash /home/'.$this->getConfiguration('user').'/install_apt.sh  >> ' . '/tmp/hdsentinel_dependancy' . ' 2>&1 &';
         return $this->sendSshCmd([$cmd]);
     }
@@ -526,10 +536,7 @@ class hdsentinel extends eqLogic
         }
 
         log::add(__CLASS__, 'info', 'Suppression des anciens log');
-        $cmd = '';
-        if ($this->getConfiguration('user') != 'root') {
-            $cmd = 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
-        }
+        $cmd = $this->getSudoCmd();
         $result['removeLog'] = $this->sendSshCmd([$cmd . 'rm /tmp/hdsentinel_*']);
 
         return $result;
@@ -554,7 +561,7 @@ class hdsentinel extends eqLogic
             } else {
                 log::add(__CLASS__, 'info', __('Récupération de fichier depuis ', __FILE__) . $this->getConfiguration('addressip'));
                 ssh2_scp_recv($connection, $_target, $_local);
-                $execmd = "echo '" . $this->getConfiguration('password') . "' | sudo -S " . 'exit';
+                $execmd = $this->getSudoCmd() . 'exit';
                 $stream = ssh2_exec($connection, $execmd);
                 $errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
                 stream_set_blocking($errorStream, true);
@@ -662,10 +669,7 @@ class hdsentinel extends eqLogic
          */
         log::add(__CLASS__, 'info', __('Test de la commande', __FILE__));
         $plugin = plugin::byId('hdsentinel');
-        $cmd = '';
-        if ($this->getConfiguration('user') != 'root') {
-            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
-        }
+        $cmd = $this->getSudoCmd();
         $cmd .= '/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
