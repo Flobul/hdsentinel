@@ -22,12 +22,14 @@ function main ()
     then
     version_installed=$(hdsentinel -h | head -n 1 | awk -F ' ' '{print $7 }');
     if [ $? -eq 0 ]
+      then
       echo 40 'Hdsentinel déjà installé : version' $version_installed;
       echo 100 "Installation annulée";
       exit 1
     else
       echo 40 'Hdsentinel déjà installé mais corrompu';
       rm /usr/local/bin/hdsentinel;
+    fi
   fi
 
   echo 50 "Récupération URL"
