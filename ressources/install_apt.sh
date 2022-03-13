@@ -21,9 +21,13 @@ function main ()
   if [ $? -eq 0 ] && [ ! "$1" = "force" ]
     then
     version_installed=$(hdsentinel -h | head -n 1 | awk -F ' ' '{print $7 }');
-    echo 'Hdsentinel déjà installé : version' $version_installed;
-    echo 100 "Installation annulée";
-    exit 1
+    if [ $? -eq 0 ]
+      echo 40 'Hdsentinel déjà installé : version' $version_installed;
+      echo 100 "Installation annulée";
+      exit 1
+    else
+      echo 40 'Hdsentinel déjà installé mais corrompu';
+      rm /usr/local/bin/hdsentinel;
   fi
 
   echo 50 "Récupération URL"
