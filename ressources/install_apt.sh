@@ -49,7 +49,7 @@ function main ()
   then
     uncompress="bzip2";
     url="https://www.hdsentinel.com/hdslin/hdsentinel-armv8.bz2";
-  elif [ "$arch" == "aarch64"]
+  elif [ "$arch" == "aarch64" ]
   then
     uncompress="bzip2";
     url="https://www.hdsentinel.com/hdslin/hdsentinel-armv8.bz2";
