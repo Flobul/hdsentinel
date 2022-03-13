@@ -55,7 +55,7 @@ function main ()
     fi
   fi
   extension="${url##*.}";
-  echo "URL=" $url;
+  echo 70 "URL récupérée="$url"; uncompress="$uncompress"; extension="$extension;
 
   echo 80 "Téléchargement et installation"
   if [ "$uncompress" == "none" ]
