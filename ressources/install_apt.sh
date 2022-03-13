@@ -1,7 +1,7 @@
 #!/bin/bash
 # Contributor: Flobul <flobul.jeedom@gmail.com>
 
-SCRIPT_VERSION='0.14'
+SCRIPT_VERSION='0.15'
 
 function main ()
 {
@@ -14,7 +14,9 @@ function main ()
   else
     apt install gzip -f
   fi
+  echo "ARCH="$arch"; BITS="$bits"; USER="$USER"; PWD="$pwd;
 
+  echo 30 "Vérification ancienne installation"
   hash hdsentinel 2>/dev/null;
   if [ $? -eq 0 ] && [ ! "$1" = "force" ]
     then
@@ -23,7 +25,6 @@ function main ()
     echo 100 "Installation annulée";
     exit 1
   fi
-  echo "ARCH="$arch"; BITS="$bits"; USER="$USER"; PWD="$pwd;
 
   echo 50 "Récupération URL"
   if [ "$arch" == "armv6l" ]
@@ -37,6 +38,10 @@ function main ()
   then
     url="https://www.hdsentinel.com/hdslin/hdsentinel-armv7.gz";
   elif [ "$arch" == "armv8" ]
+  then
+    uncompress="bzip2";
+    url="https://www.hdsentinel.com/hdslin/hdsentinel-armv8.bz2";
+  elif [ "$arch" == "aarch64"]
   then
     uncompress="bzip2";
     url="https://www.hdsentinel.com/hdslin/hdsentinel-armv8.bz2";
