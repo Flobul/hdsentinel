@@ -371,7 +371,7 @@ class hdsentinel extends eqLogic
             $cmd2 .= '\'';
         }
         $return = $this->sendSshCmd([$cmd2]);
-        log::add(__CLASS__, 'info', __('Fin création du cron distant cmd1: ', __FILE__) . $cmd1 . ' + cmd2: ' . $cmd2 . ' = ' . $return);
+        log::add(__CLASS__, 'info', __('Fin création du cron distant cmd1: ', __FILE__) . ' + cmd: ' . str_replace(jeedom::getApiKey($plugin->getId(),'APIKEY',str_replace($this->getConfiguration('password'),'PASSWORD',$cmd2))) . ' = ' . $return);
         return $return;
     }
 
@@ -519,11 +519,12 @@ class hdsentinel extends eqLogic
          * @return			$result        array         Résultat des 2 scripts envoyés
          */
         $result = array();
+        $cmd = $this->getSudoCmd();
         log::add(__CLASS__, 'debug', __('Envoi de fichier ', __FILE__) . $this->getName());
         $script_path = dirname(__FILE__) . '/../../ressources/';
 
         log::add(__CLASS__, 'info', 'Création du dossier des scripts');
-        $result['dir'] = $this->sendSshCmd(['/usr/bin/mkdir /home/'.$this->getConfiguration('user') . '; /usr/bin/echo $?;']);
+        $result['dir'] = $this->sendSshCmd([$cmd . '/usr/bin/mkdir /home/'.$this->getConfiguration('user') . '; /usr/bin/echo $?;']);
 
         log::add(__CLASS__, 'info', 'Envoi du fichier  '.$script_path.'hdsentinel_to_jeedom_pub.sh');
         if ($this->sendSshFiles($script_path.'hdsentinel_to_jeedom_pub.sh', '/home/'.$this->getConfiguration('user').'/hdsentinel_to_jeedom_pub.sh')) {
@@ -536,7 +537,6 @@ class hdsentinel extends eqLogic
         }
 
         log::add(__CLASS__, 'info', 'Suppression des anciens log');
-        $cmd = $this->getSudoCmd();
         $result['removeLog'] = $this->sendSshCmd([$cmd . 'rm /tmp/hdsentinel_*']);
 
         return $result;
@@ -633,7 +633,7 @@ class hdsentinel extends eqLogic
                 return false;
             } else {
                 foreach ($_cmd as $cmd) {
-                    log::add(__CLASS__, 'info', __('Commande par SSH ', __FILE__) . $cmd .  __(' sur ', __FILE__) . $this->getConfiguration('addressip'));
+                    log::add(__CLASS__, 'info', __('Commande par SSH ', __FILE__) . str_replace(jeedom::getApiKey($plugin->getId(),'APIKEY',str_replace($this->getConfiguration('password'),'PASSWORD',$cmd))) .  __(' sur ', __FILE__) . $this->getConfiguration('addressip'));
                     $execmd = $cmd;
                     $stream = ssh2_exec($connection, $execmd);
                     $errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
