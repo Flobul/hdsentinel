@@ -601,7 +601,7 @@ class hdsentinel extends eqLogic
                 } else {
                     log::add(__CLASS__, 'info', __('Fichier envoyé avec succès sur ', __FILE__) . $this->getConfiguration('addressip'));
                 }
-                $stream = ssh2_exec($connection, 'exit');
+                $stream = ssh2_exec($connection, $this->getSudoCmd() . 'exit');
                 $errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
                 stream_set_blocking($errorStream, true);
                 stream_set_blocking($stream, true);
@@ -624,6 +624,7 @@ class hdsentinel extends eqLogic
          * @param			$_cmd        array       Tableau des commandes à envoyer
          * @return			             string      Retour de la commande
          */
+        $plugin = plugin::byId('hdsentinel');
         if (!$connection = ssh2_connect($this->getConfiguration('addressip'), $this->getConfiguration('portssh'))) {
             log::add(__CLASS__, 'debug', __('Connexion SSH KO pour ', __FILE__) . $this->getName());
             return false;
