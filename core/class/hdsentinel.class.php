@@ -527,7 +527,7 @@ class hdsentinel extends eqLogic
         $script_path = dirname(__FILE__) . '/../../ressources/';
 
         log::add(__CLASS__, 'info', 'Création du dossier des scripts');
-        $result['dir'] = $this->sendSshCmd([$cmd . 'rm -Rf /usr/bin/mkdir /home/'.$user.'/hdsentinel',$cmd . 'mkdir /home/'.$user.'/hdsentinel; echo $?;']);
+        $result['dir'] = $this->sendSshCmd([$cmd . 'rm -Rf /home/'.$user.'/hdsentinel',$cmd . 'mkdir /home/'.$user.'/hdsentinel; echo $?;']);
 
         log::add(__CLASS__, 'info', 'Envoi du fichier  '.$script_path.'hdsentinel_to_jeedom_pub.sh');
         if ($this->sendSshFiles($script_path.'hdsentinel_to_jeedom_pub.sh', '/home/'.$user.'/hdsentinel/hdsentinel_to_jeedom_pub.sh')) {
