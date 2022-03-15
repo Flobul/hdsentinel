@@ -520,20 +520,21 @@ class hdsentinel extends eqLogic
          */
         $result = array();
         $cmd = $this->getSudoCmd();
+        $user = $this->getConfiguration('user');
         log::add(__CLASS__, 'debug', __('Envoi de fichier ', __FILE__) . $this->getName());
         $script_path = dirname(__FILE__) . '/../../ressources/';
 
         log::add(__CLASS__, 'info', 'Création du dossier des scripts');
-        $result['dir'] = $this->sendSshCmd([$cmd . '/usr/bin/mkdir /home/'.$this->getConfiguration('user') . '; /usr/bin/echo $?;']);
+        $result['dir'] = $this->sendSshCmd([$cmd . 'rm -Rf /usr/bin/mkdir /home/'.$user.'/hdsentinel',$cmd . 'mkdir /home/'.$user.'/hdsentinel; echo $?;']);
 
         log::add(__CLASS__, 'info', 'Envoi du fichier  '.$script_path.'hdsentinel_to_jeedom_pub.sh');
-        if ($this->sendSshFiles($script_path.'hdsentinel_to_jeedom_pub.sh', '/home/'.$this->getConfiguration('user').'/hdsentinel_to_jeedom_pub.sh')) {
-            $result['publish'] = $this->sendSshCmd(['ls /home/'.$this->getConfiguration('user').'/hdsentinel_to_jeedom_pub.sh | wc -l']);
+        if ($this->sendSshFiles($script_path.'hdsentinel_to_jeedom_pub.sh', '/home/'.$user.'/hdsentinel/hdsentinel_to_jeedom_pub.sh')) {
+            $result['publish'] = $this->sendSshCmd(['ls /home/'.$user.'/hdsentinel/hdsentinel_to_jeedom_pub.sh | wc -l']);
         }
 
         log::add(__CLASS__, 'info', 'Envoi du fichier  '.$script_path.'install_apt.sh');
-        if ($this->sendSshFiles($script_path.'install_apt.sh', '/home/'.$this->getConfiguration('user').'/install_apt.sh')) {
-            $result['install'] = $this->sendSshCmd(['ls /home/'.$this->getConfiguration('user').'/install_apt.sh | wc -l']);
+        if ($this->sendSshFiles($script_path.'install_apt.sh', '/home/'.$user.'/hdsentinel/install_apt.sh')) {
+            $result['install'] = $this->sendSshCmd(['ls /home/'.$user.'/hdsentinel/install_apt.sh | wc -l']);
         }
 
         log::add(__CLASS__, 'info', 'Suppression des anciens log');
@@ -594,7 +595,7 @@ class hdsentinel extends eqLogic
                 log::add(__CLASS__, 'error', __('Authentification SSH KO pour ', __FILE__) . $this->getName());
                 return false;
             } else {
-                $result = ssh2_scp_send($connection, $_local, $_target, 0777);
+                $result = ssh2_scp_send($connection, $_local, $_target, 0644);
                 if (!$result) {
                     log::add(__CLASS__, 'error', __('Erreur d\'envoi du fichier sur ', __FILE__) . $this->getConfiguration('addressip'));
                     return false;
@@ -634,7 +635,9 @@ class hdsentinel extends eqLogic
                 return false;
             } else {
                 foreach ($_cmd as $cmd) {
-                    log::add(__CLASS__, 'info', __('Commande par SSH ', __FILE__) . str_replace(jeedom::getApiKey($plugin->getId(),'APIKEY',str_replace($this->getConfiguration('password'),'PASSWORD',$cmd))) .  __(' sur ', __FILE__) . $this->getConfiguration('addressip'));
+                    $cmdLog = str_replace($this->getConfiguration('password'),'PASSWORD',$cmd);
+                    $cmdLog = str_replace(jeedom::getApiKey($plugin->getId()),'APIKEY',$cmdLog);
+                    log::add(__CLASS__, 'info', __('Commande par SSH2 ', __FILE__) . $cmdLog .  __(' sur ', __FILE__) . $this->getConfiguration('addressip'));
                     $execmd = $cmd;
                     $stream = ssh2_exec($connection, $execmd);
                     $errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
