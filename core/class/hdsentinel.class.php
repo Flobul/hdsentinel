@@ -371,7 +371,9 @@ class hdsentinel extends eqLogic
             $cmd2 .= '\'';
         }
         $return = $this->sendSshCmd([$cmd2]);
-        log::add(__CLASS__, 'info', __('Fin création du cron distant cmd1: ', __FILE__) . ' + cmd: ' . str_replace(jeedom::getApiKey($plugin->getId(),'APIKEY',str_replace($this->getConfiguration('password'),'PASSWORD',$cmd2))) . ' = ' . $return);
+        $cmdLog = str_replace($this->getConfiguration('password'),'PASSWORD',$cmd2);
+        $cmdLog = str_replace(jeedom::getApiKey($plugin->getId()),'APIKEY',$cmdLog);
+        log::add(__CLASS__, 'info', __('Fin création du cron distant cmd1: ', __FILE__) . ' + cmd: ' . $cmdLog . ' = ' . $return);
         return $return;
     }
 
