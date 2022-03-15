@@ -1,20 +1,26 @@
 #!/bin/bash
 # Contributor: Flobul <flobul.jeedom@gmail.com>
 
-SCRIPT_VERSION='0.15'
+SCRIPT_VERSION='0.16'
+if [ -e  /etc/synoinfo.conf ]; then
+  arch=`uname -m`;
+  pwd=`pwd`;
+  bits=${arch#*_};
+else
+  arch=`arch`;
+  pwd=`pwd`;
+  bits=$(getconf LONG_BIT);
+fi
 
 function main ()
 {
   echo 10 "Vérification du système" $1
-  arch=`arch`;
-  pwd=`pwd`;
-  bits=$(getconf LONG_BIT);
   if command_check $uncompress ; then
     uncompress="gzip";
   else
     apt install gzip -f
   fi
-  echo "ARCH="$arch"; BITS="$bits"; USER="$USER"; PWD="$pwd;
+  echo "ARCH="$arch"; BITS="$bits"; USER="$USER"; PWD="$pwd"; SCRIPT_VERSION="$SCRIPT_VERSION;
 
  echo 30 "Suppression ancienne installation"
  rm /usr/local/bin/hdsentinel;
@@ -53,6 +59,9 @@ function main ()
   then
     uncompress="bzip2";
     url="https://www.hdsentinel.com/hdslin/hdsentinel-armv8.bz2";
+  elif [ "$arch" == "x86_64" ]
+  then
+    url="https://www.hdsentinel.com/hdslin/hdsentinel-019c-x64.gz";
   else
     if [ "$bits" -eq "32" ]
     then

@@ -219,11 +219,10 @@ class hdsentinel extends eqLogic
     {
         $plugin = plugin::byId('hdsentinel');
         $cmd = $this->getSudoCmd();
-        $cmd ='/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
+        $cmd .='/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
         $cmd .= ' -o html';
-
         return $this->sendSshCmd([$cmd]);
     }
 
@@ -361,12 +360,12 @@ class hdsentinel extends eqLogic
         if ($this->getConfiguration('user') != 'root') {
             $cmd2 .= 'echo ' . $this->getConfiguration('password') . ' | su -c \'';
         }
-        $cmd2 .= 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
+        $cmd2 .= 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
         $cmd2 .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd2 .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
         $cmd2 .= ' -o xml';
         $cmd2 .= ' >> /tmp/hdsentinel_log 2>&1 &"';
-        $cmd2 .= ' > /etc/cron.daily/hdsentinel';
+        $cmd2 .= ' > /etc/cron.daily/hdsentinel; echo $?;';
         if ($this->getConfiguration('user') != 'root') {
             $cmd2 .= '\'';
         }
@@ -401,8 +400,14 @@ class hdsentinel extends eqLogic
          * @return			$return			string		Retour de la commande
          */
         log::add(__CLASS__, 'info', __('Début lancement du cron distant', __FILE__));
+
+        if (!$this->sendSshCmd(['ls /etc/synoinfo.conf | wc -l'])) {
+            log::add(__CLASS__, 'info', __('Création du cron distant pour synology ', __FILE__));
+
+        }
         if (!$this->sendSshCmd(['ls /etc/cron.daily/hdsentinel | wc -l'])) {
-            log::add(__CLASS__, 'info', __('Création du cron distant ', __FILE__) . $createFolder);
+            $this->sendSshCmd([ $this->getSudoCmd() . 'mkdir -p /etc/cron.daily/;']);
+            log::add(__CLASS__, 'info', __('Création du cron distant ', __FILE__));
             $this->createCron();
         }
         if (!$this->sendSshCmd([$this->getSudoCmd() . 'crontab -l | grep hdsentinel_to_jeedom_pub | wc -l'])) {
@@ -468,7 +473,7 @@ class hdsentinel extends eqLogic
          */
         log::add(__CLASS__, 'info', __('Installation des dépendances', __FILE__));
         $cmd = $this->getSudoCmd();
-        $cmd .= 'bash /home/'.$this->getConfiguration('user').'/install_apt.sh  >> ' . '/tmp/hdsentinel_dependancy' . ' 2>&1 &';
+        $cmd .= 'bash /home/'.$this->getConfiguration('user').'/hdsentinel/ressources/install_apt.sh  >> ' . '/tmp/hdsentinel_dependancy' . ' 2>&1 &';
         return $this->sendSshCmd([$cmd]);
     }
 
@@ -482,7 +487,7 @@ class hdsentinel extends eqLogic
          */
         $name = $this->getName();
         $local = dirname(__FILE__) . '/../../../../log/hdsentinel_'.str_replace(' ', '-', $name).$_dependancy;
-        log::add(__CLASS__, 'info', 'Suppression de la log ' . $local);
+        log::add(__CLASS__, 'info', __('Suppression de la log ', __FILE__) . $local);
         exec('rm -f '. $local);
         log::add(__CLASS__, 'info', __('Récupération de la log distante', __FILE__));
         if ($this->getFiles($local, '/tmp/hdsentinel_dependancy'.$_dependancy)) {
@@ -502,7 +507,7 @@ class hdsentinel extends eqLogic
          */
         $name = $this->getName();
         $local = dirname(__FILE__) . '/../../../../log/hdsentinel_log_'.str_replace(' ', '-', $name).$_dependancy;
-        log::add(__CLASS__, 'info', 'Suppression de la log ' . $local);
+        log::add(__CLASS__, 'info', __('Suppression de la log ', __FILE__) . $local);
         exec('rm -f '. $local);
         log::add(__CLASS__, 'info', __('Récupération de la log distante', __FILE__));
         if ($this->getFiles($local, '/tmp/hdsentinel_log'.$_dependancy)) {
@@ -525,21 +530,20 @@ class hdsentinel extends eqLogic
         $user = $this->getConfiguration('user');
         log::add(__CLASS__, 'debug', __('Envoi de fichier ', __FILE__) . $this->getName());
         $script_path = dirname(__FILE__) . '/../../ressources/';
+		exec('tar -zcvf /tmp/folder-hdsentinel.tar.gz ' . $script_path);
 
-        log::add(__CLASS__, 'info', 'Création du dossier des scripts');
-        $result['dir'] = $this->sendSshCmd([$cmd . 'rm -Rf /home/'.$user.'/hdsentinel',$cmd . 'mkdir /home/'.$user.'/hdsentinel; echo $?;']);
+        log::add(__CLASS__, 'info', __('Création du dossier des scripts', __FILE__));
+		$result['dir'] = $this->sendSshCmd([$cmd.'rm -Rf /home/'.$user.'/hdsentinel',$cmd.'mkdir -p /home/'.$user.'/hdsentinel;echo $?']);
+        log::add(__CLASS__, 'info', 'Envoi du fichier /tmp/folder-hdsentinel.tar.gz');
 
-        log::add(__CLASS__, 'info', 'Envoi du fichier  '.$script_path.'hdsentinel_to_jeedom_pub.sh');
-        if ($this->sendSshFiles($script_path.'hdsentinel_to_jeedom_pub.sh', '/home/'.$user.'/hdsentinel/hdsentinel_to_jeedom_pub.sh')) {
-            $result['publish'] = $this->sendSshCmd(['ls /home/'.$user.'/hdsentinel/hdsentinel_to_jeedom_pub.sh | wc -l']);
+		if ($this->sendSshFiles('/tmp/folder-hdsentinel.tar.gz','/home/'.$user.'/folder-hdsentinel.tar.gz')) {
+			log::add(__CLASS__,'info',__('Décompression du dossier distant',__FILE__));
+			$result['uncompress'] = $this->sendSshCmd([$cmd . 'tar -zxf /home/'.$user.'/folder-hdsentinel.tar.gz -C /home/'.$user.'/hdsentinel;echo $?;',$cmd.'rm -f /home/'.$user.'/folder-hdsentinel.tar.gz;echo $?;']);
+            $result['install'] = $this->sendSshCmd(['ls /home/'.$user.'/hdsentinel/ressources/install_apt.sh | wc -l']);
+            $result['publish'] = $this->sendSshCmd(['ls /home/'.$user.'/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh | wc -l']);
         }
 
-        log::add(__CLASS__, 'info', 'Envoi du fichier  '.$script_path.'install_apt.sh');
-        if ($this->sendSshFiles($script_path.'install_apt.sh', '/home/'.$user.'/hdsentinel/install_apt.sh')) {
-            $result['install'] = $this->sendSshCmd(['ls /home/'.$user.'/hdsentinel/install_apt.sh | wc -l']);
-        }
-
-        log::add(__CLASS__, 'info', 'Suppression des anciens log');
+        log::add(__CLASS__, 'info', __('Suppression des anciens log', __FILE__));
         $result['removeLog'] = $this->sendSshCmd([$cmd . 'rm /tmp/hdsentinel_*']);
 
         return $result;
@@ -555,11 +559,11 @@ class hdsentinel extends eqLogic
          * @return			               bool          Vrai
          */
         if (!$connection = ssh2_connect($this->getConfiguration('addressip'), $this->getConfiguration('portssh'))) {
-            log::add(__CLASS__, 'error', 'connexion SSH KO for ' . $this->getName());
+            log::add(__CLASS__, 'error', __('Connexion SSH KO pour ', __FILE__) . $this->getName());
             return false;
         } else {
             if (!ssh2_auth_password($connection, $this->getConfiguration('user'), $this->getConfiguration('password'))) {
-                log::add(__CLASS__, 'error', 'Authentification SSH KO for ' . $this->getName());
+                log::add(__CLASS__, 'error', __('Authentification SSH KO pour ', __FILE__) . $this->getName());
                 return false;
             } else {
                 log::add(__CLASS__, 'info', __('Récupération de fichier depuis ', __FILE__) . $this->getConfiguration('addressip'));
@@ -597,7 +601,7 @@ class hdsentinel extends eqLogic
                 log::add(__CLASS__, 'error', __('Authentification SSH KO pour ', __FILE__) . $this->getName());
                 return false;
             } else {
-                $result = ssh2_scp_send($connection, $_local, $_target, 0644);
+                $result = ssh2_scp_send($connection, $_local, $_target, 0777);
                 if (!$result) {
                     log::add(__CLASS__, 'error', __('Erreur d\'envoi du fichier sur ', __FILE__) . $this->getConfiguration('addressip'));
                     return false;
@@ -676,7 +680,7 @@ class hdsentinel extends eqLogic
         log::add(__CLASS__, 'info', __('Test de la commande', __FILE__));
         $plugin = plugin::byId('hdsentinel');
         $cmd = $this->getSudoCmd();
-        $cmd .= '/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel_to_jeedom_pub.sh';
+        $cmd .= '/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
         $cmd .= ' -o xml';
