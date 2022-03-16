@@ -386,7 +386,7 @@ class hdsentinel extends eqLogic
          */
         $cmd = '';
         if ($this->getConfiguration('user') != 'root') {
-            $cmd .= 'echo ' . $this->getConfiguration('password') . ' | sudo -S ';
+            $cmd .= 'echo "' . $this->getConfiguration('password') . '" | sudo -S ';
         }
         return $cmd;
     }
@@ -401,18 +401,31 @@ class hdsentinel extends eqLogic
          */
         log::add(__CLASS__, 'info', __('Début lancement du cron distant', __FILE__));
 
-        if (!$this->sendSshCmd(['ls /etc/synoinfo.conf | wc -l'])) {
-            log::add(__CLASS__, 'info', __('Création du cron distant pour synology ', __FILE__));
-
-        }
+        $plugin = plugin::byId('hdsentinel');
         if (!$this->sendSshCmd(['ls /etc/cron.daily/hdsentinel | wc -l'])) {
             $this->sendSshCmd([ $this->getSudoCmd() . 'mkdir -p /etc/cron.daily/;']);
             log::add(__CLASS__, 'info', __('Création du cron distant ', __FILE__));
-            $this->createCron();
+
+            if ($this->sendSshCmd(['ls /etc/synoinfo.conf | wc -l'])) {
+                log::add(__CLASS__, 'info', __('Création du cron distant pour synology ', __FILE__));
+                //$cmd = $this->getSudoCmd() . 'echo "* * * * * echo fuzuri | sudo -S  /usr/bin/bash /home/'.$this->getConfiguration('user').'/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh -a APIKEY -i 192.168.0.29 -o xml >> /tmp/hdsentinel_log 2>&1 &" > /tmp/hdsentinel_cron';
+                $cmd2 .= $this->getSudoCmd() . 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+                $cmd2 .= ' -a ' . jeedom::getApiKey($plugin->getId());
+                $cmd2 .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
+                $cmd2 .= ' -o xml';
+                $cmd2 .= ' >> /tmp/hdsentinel_log 2>&1 &"';
+                $cmd2 .= ' > /tmp/hdsentinel_cron; '.$this->getSudoCmd().'mv /tmp/hdsentinel_cron /etc/cron.daily/hdsentinel; echo $?;';
+
+                $this->sendSshCmd([$cmd2]);
+            } else {
+                $this->createCron();
+            }
         }
-        if (!$this->sendSshCmd([$this->getSudoCmd() . 'crontab -l | grep hdsentinel_to_jeedom_pub | wc -l'])) {
+        $cmd3 = '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l || ' . $this->getSudoCmd() . '/usr/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l';
+
+        if (!$this->sendSshCmd([$cmd3])) {
             log::add(__CLASS__, 'info', __('Lancement du cron distant', __FILE__));
-            $cmd = $this->getSudoCmd() . 'crontab /etc/cron.daily/hdsentinel; echo $?;';
+            $cmd = $this->getSudoCmd() . '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab /etc/cron.daily/hdsentinel; echo $? || ' . $this->getSudoCmd() . '/usr/bin/crontab/etc/cron.daily/hdsentinel; echo $?';
             return $this->sendSshCmd([$cmd]);
         }
         return false;
@@ -427,10 +440,10 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Suppression du cron distant', __FILE__));
-        $cmd1 = $this->getSudoCmd();
-        $cmd1 .= "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
-        $cmd2 = $this->getSudoCmd();
-        $cmd2 .= "rm /etc/cron.daily/hdsentinel; echo $?;";
+        $cmd1 = '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/opt/bin/crontab -; echo $? || ' . $this->getSudoCmd() . '/usr/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/usr/bin/crontab -; echo $?';
+
+        //$cmd1 = $this->getSudoCmd() . "$(which crontab) -l | sed '/hdsentinel_to_jeedom_pub/d' | $(which crontab) -; echo $?;";
+        $cmd2 = $this->getSudoCmd() . "rm /etc/cron.daily/hdsentinel; echo $?;";
         return $this->sendSshCmd([$cmd1,$cmd2]);
     }
 
@@ -443,8 +456,9 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Arrêt du cron distant', __FILE__));
-        $cmd = $this->getSudoCmd();
-        $cmd .= "crontab -l | sed '/hdsentinel_to_jeedom_pub/d' | crontab -; echo $?;";
+        $cmd = '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/opt/bin/crontab -; echo $? || ' . $this->getSudoCmd() . '/usr/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/usr/bin/crontab -; echo $?';
+
+        //$cmd = $this->getSudoCmd() . "$(which crontab) -l | sed '/hdsentinel_to_jeedom_pub/d' | $(which crontab) -; echo $?;";
         return $this->sendSshCmd([$cmd]);
     }
 
@@ -458,8 +472,7 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Statut du cron distant', __FILE__));
-        $cmd = $this->getSudoCmd();
-        $cmd .= 'crontab -l | grep hdsentinel_to_jeedom_pub | wc -l';
+        $cmd = '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l || ' . $this->getSudoCmd() . '/usr/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l';
         return $this->sendSshCmd([$cmd]);
     }
 
@@ -650,11 +663,11 @@ class hdsentinel extends eqLogic
                     stream_set_blocking($errorStream, true);
                     stream_set_blocking($stream, true);
                     $output = stream_get_contents($stream);
+					//$output = stream_get_contents($stream) . ' ' . stream_get_contents($errorStream);
+
                     fclose($stream);
                     fclose($errorStream);
-                    if (trim($output) != '') {
-                        log::add(__CLASS__, 'debug', $output);
-                    }
+                    log::add(__CLASS__, 'info', __('Sortie commande par SSH2 ', __FILE__) . $output .  __(' sur ', __FILE__) . $this->getConfiguration('addressip'));
                 }
                 $stream = ssh2_exec($connection, 'exit');
                 $errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
