@@ -73,6 +73,7 @@ function refreshStatusMode(_id) {
                 $('#div_alert').showAlert({message: data.result, level: 'danger'});
                 return;
             }
+          console.log('status', data)
 
             if (data.result && data.result == '1') {
                 $('.hdsentinelAction[data-action=checkremotecron]').removeClass('btn-danger').addClass('btn-success');
@@ -181,8 +182,6 @@ $('.hdsentinelAction[data-action=getLog]').on('click', function () {
                 $('#div_alert').showAlert({message: data.result, level: 'danger'});
                 return;
             }
-
-          console.log(data)
         }
     });
 });
@@ -206,6 +205,8 @@ $('.hdsentinelAction[data-action=launchCron]').on('click', function () {
                 return;
             }
             refreshStatusMode(id);
+          console.log('launch', data)
+
             if ((1 - data.result) != "1") {
                 $('#div_alert').showAlert({message: '{{Lancement du cron échoué :}}'+data.result, level: 'danger'});
                 return;
@@ -234,6 +235,8 @@ $('.hdsentinelAction[data-action=removeCron]').on('click', function () {
                 return;
             }
             refreshStatusMode(id);
+          console.log('remove', data)
+
             if ((1 - data.result) != '1') {
                 $('#div_alert').showAlert({message: '{{Suppression du cron échouée :}}'+data.result, level: 'danger'});
                 return;
@@ -262,6 +265,7 @@ $('.hdsentinelAction[data-action=stopCron]').on('click', function () {
                 return;
             }
             refreshStatusMode(id);
+          console.log('stop', data)
             if ((1 - data.result) != '1') {
                 $('#div_alert').showAlert({message: '{{Arrêt du cron échoué :}}'+data.result, level: 'danger'});
                 return;

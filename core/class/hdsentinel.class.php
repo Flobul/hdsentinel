@@ -421,11 +421,11 @@ class hdsentinel extends eqLogic
                 $this->createCron();
             }
         }
-        $cmd3 = '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l || ' . $this->getSudoCmd() . '/usr/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l';
+        $cmd3 = '[ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l) || (' . $this->getSudoCmd() . '/usr/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l)';
 
         if (!$this->sendSshCmd([$cmd3])) {
             log::add(__CLASS__, 'info', __('Lancement du cron distant', __FILE__));
-            $cmd = $this->getSudoCmd() . '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab /etc/cron.daily/hdsentinel; echo $? || ' . $this->getSudoCmd() . '/usr/bin/crontab/etc/cron.daily/hdsentinel; echo $?';
+            $cmd = $this->getSudoCmd() . '[ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab /etc/cron.daily/hdsentinel && echo $?) || (' . $this->getSudoCmd() . '/usr/bin/crontab /etc/cron.daily/hdsentinel && echo $?)';
             return $this->sendSshCmd([$cmd]);
         }
         return false;
@@ -456,10 +456,10 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Arrêt du cron distant', __FILE__));
-        $cmd = '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/opt/bin/crontab -; echo $? || ' . $this->getSudoCmd() . '/usr/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/usr/bin/crontab -; echo $?';
+        $cmd1 = '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/opt/bin/crontab -; echo $?';
+        $cmd2 = '[ -f "/usr/bin/crontab" ] && ' . $this->getSudoCmd() . '/usr/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/usr/bin/crontab -; echo $?';
 
-        //$cmd = $this->getSudoCmd() . "$(which crontab) -l | sed '/hdsentinel_to_jeedom_pub/d' | $(which crontab) -; echo $?;";
-        return $this->sendSshCmd([$cmd]);
+        return $this->sendSshCmd([$cmd1,$cmd2]);
     }
 
 
@@ -472,7 +472,7 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Statut du cron distant', __FILE__));
-        $cmd = '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l || ' . $this->getSudoCmd() . '/usr/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l';
+        $cmd = '[ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l) || (' . $this->getSudoCmd() . '/usr/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l)';
         return $this->sendSshCmd([$cmd]);
     }
 
