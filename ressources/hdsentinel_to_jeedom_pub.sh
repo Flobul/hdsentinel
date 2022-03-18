@@ -6,8 +6,17 @@
 #############################
 # DECLARATION DES VARIABLES #
 #############################
-SCRIPT_VERSION='0.28'
+SCRIPT_VERSION='0.29'
 HDSENTINEL=$(which hdsentinel)
+if [ -f /usr/local/bin/hdsentinel ]; then
+  HDSENTINEL='/usr/local/bin/hdsentinel'
+else if [ -f /usr/bin/hdsentinel ]; then
+  HDSENTINEL='/usr/bin/hdsentinel'
+else if [ -f /bin/hdsentinel ]; then
+  HDSENTINEL='/bin/hdsentinel'
+else if [ -f /sbin/hdsentinel ]; then
+  HDSENTINEL='/sbin/hdsentinel'
+fi
 
 #############################
 # DECLARATION DES FONCTIONS #
