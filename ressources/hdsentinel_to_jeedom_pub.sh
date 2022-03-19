@@ -6,7 +6,7 @@
 #############################
 # DECLARATION DES VARIABLES #
 #############################
-SCRIPT_VERSION='0.29'
+SCRIPT_VERSION='0.30'
 HDSENTINEL=$(which hdsentinel)
 if [ -f /usr/local/bin/hdsentinel ]; then
   HDSENTINEL='/usr/local/bin/hdsentinel'
@@ -17,7 +17,26 @@ else if [ -f /bin/hdsentinel ]; then
 else if [ -f /sbin/hdsentinel ]; then
   HDSENTINEL='/sbin/hdsentinel'
 fi
-
+WGET=$(which wget)
+if [ -f /usr/local/bin/wget ]; then
+  WGET='/usr/local/bin/wget'
+else if [ -f /usr/bin/wget ]; then
+  WGET='/usr/bin/wget'
+else if [ -f /bin/wget ]; then
+  WGET='/bin/wget'
+else if [ -f /sbin/wget ]; then
+  WGET='/sbin/wget'
+fi
+CURL=$(which curl)
+if [ -f /usr/local/bin/curl ]; then
+  CURL='/usr/local/bin/curl'
+else if [ -f /usr/bin/curl ]; then
+  CURL='/usr/bin/curl'
+else if [ -f /bin/curl ]; then
+  CURL='/bin/curl'
+else if [ -f /sbin/curl ]; then
+  CURL='/sbin/curl'
+fi
 #############################
 # DECLARATION DES FONCTIONS #
 #############################
@@ -53,19 +72,19 @@ function retour_erreur ()
   CODE_ERREUR=$?
   echo $1 "error code $CODE_ERREUR: Trying insecure http"
   if [[ ${CODE_ERREUR} -eq 60 || ${CODE_ERREUR} -eq 0  && $1 -eq curl ]]; then
-    /usr/bin/curl -i ${URL_API}'?apikey='${API} -k --form file=@/tmp/hdsentinel.${OUTPUT} --header "Content-Type:text/${OUTPUT};charset=UTF-8"
+    ${CURL} -i ${URL_API}'?apikey='${API} -k --form file=@/tmp/hdsentinel.${OUTPUT} --header "Content-Type:text/${OUTPUT};charset=UTF-8"
   elif [[ ${CODE_ERREUR} -eq 5 && $1 -eq wget ]]; then
-    /usr/bin/wget ${URL_API}'?apikey='${API} --no-check-certificate --post-file=/tmp/hdsentinel.${OUTPUT} --header='Content-Type:text/${OUTPUT};charset=UTF-8'
+    ${WGET} ${URL_API}'?apikey='${API} --no-check-certificate --post-file=/tmp/hdsentinel.${OUTPUT} --header='Content-Type:text/${OUTPUT};charset=UTF-8'
   fi
 }
 
 function postRequest ()
 {
   if command_check curl ; then
-    /usr/bin/curl -i ${URL_API}'?apikey='${API} --form file=@/tmp/hdsentinel.${OUTPUT} --header "Content-Type:text/${OUTPUT};charset=UTF-8"
+    ${CURL} -i ${URL_API}'?apikey='${API} --form file=@/tmp/hdsentinel.${OUTPUT} --header "Content-Type:text/${OUTPUT};charset=UTF-8"
     retour_erreur curl
   elif command_check wget ; then
-    /usr/bin/wget ${URL_API}'?apikey='${API} --post-file=/tmp/hdsentinel.${OUTPUT} --header='Content-Type:text/${OUTPUT};charset=UTF-8'
+    ${WGET} ${URL_API}'?apikey='${API} --post-file=/tmp/hdsentinel.${OUTPUT} --header='Content-Type:text/${OUTPUT};charset=UTF-8'
     retour_erreur wget
   fi
 }

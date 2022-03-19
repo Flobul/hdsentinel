@@ -219,7 +219,7 @@ class hdsentinel extends eqLogic
     {
         $plugin = plugin::byId('hdsentinel');
         $cmd = $this->getSudoCmd();
-        $cmd .='/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+        $cmd .='bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
         $cmd .= ' -o html';
@@ -360,7 +360,7 @@ class hdsentinel extends eqLogic
         if ($this->getConfiguration('user') != 'root') {
             $cmd2 .= 'echo ' . $this->getConfiguration('password') . ' | su -c \'';
         }
-        $cmd2 .= 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+        $cmd2 .= 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
         $cmd2 .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd2 .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
         $cmd2 .= ' -o xml';
@@ -408,8 +408,8 @@ class hdsentinel extends eqLogic
 
             if ($this->sendSshCmd(['ls /etc/synoinfo.conf | wc -l'])) {
                 log::add(__CLASS__, 'info', __('Création du cron distant pour synology ', __FILE__));
-                //$cmd = $this->getSudoCmd() . 'echo "* * * * * echo fuzuri | sudo -S  /usr/bin/bash /home/'.$this->getConfiguration('user').'/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh -a APIKEY -i 192.168.0.29 -o xml >> /tmp/hdsentinel_log 2>&1 &" > /tmp/hdsentinel_cron';
-                $cmd2 .= $this->getSudoCmd() . 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' /usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+                //$cmd = $this->getSudoCmd() . 'echo "* * * * * echo fuzuri | sudo -S  bash /home/'.$this->getConfiguration('user').'/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh -a APIKEY -i 192.168.0.29 -o xml >> /tmp/hdsentinel_log 2>&1 &" > /tmp/hdsentinel_cron';
+                $cmd2 .= $this->getSudoCmd() . 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
                 $cmd2 .= ' -a ' . jeedom::getApiKey($plugin->getId());
                 $cmd2 .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
                 $cmd2 .= ' -o xml';
@@ -693,7 +693,7 @@ class hdsentinel extends eqLogic
         log::add(__CLASS__, 'info', __('Test de la commande', __FILE__));
         $plugin = plugin::byId('hdsentinel');
         $cmd = $this->getSudoCmd();
-        $cmd .= '/usr/bin/bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+        $cmd .= 'bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
         $cmd .= ' -o xml';
