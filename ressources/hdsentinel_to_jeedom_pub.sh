@@ -6,37 +6,40 @@
 #############################
 # DECLARATION DES VARIABLES #
 #############################
-SCRIPT_VERSION='0.30'
-HDSENTINEL=$(which hdsentinel)
-if [ -f /usr/local/bin/hdsentinel ]; then
-  HDSENTINEL='/usr/local/bin/hdsentinel'
-else if [ -f /usr/bin/hdsentinel ]; then
-  HDSENTINEL='/usr/bin/hdsentinel'
-else if [ -f /bin/hdsentinel ]; then
-  HDSENTINEL='/bin/hdsentinel'
-else if [ -f /sbin/hdsentinel ]; then
-  HDSENTINEL='/sbin/hdsentinel'
+SCRIPT_VERSION='0.31'
+HDSENTINEL=$(which hdsentinel);
+if [ -f '/usr/local/bin/hdsentinel' ]; then
+  HDSENTINEL='/usr/local/bin/hdsentinel';
+elif [ -f '/usr/bin/hdsentinel' ]; then
+  HDSENTINEL='/usr/bin/hdsentinel';
+elif [ -f '/bin/hdsentinel' ]; then
+  HDSENTINEL='/bin/hdsentinel';
+elif [ -f '/sbin/hdsentinel' ]; then
+  HDSENTINEL='/sbin/hdsentinel';
 fi
-WGET=$(which wget)
-if [ -f /usr/local/bin/wget ]; then
-  WGET='/usr/local/bin/wget'
-else if [ -f /usr/bin/wget ]; then
-  WGET='/usr/bin/wget'
-else if [ -f /bin/wget ]; then
-  WGET='/bin/wget'
-else if [ -f /sbin/wget ]; then
-  WGET='/sbin/wget'
+
+WGET=$(which wget);
+if [ -f '/usr/local/bin/wget' ]; then
+  WGET='/usr/local/bin/wget';
+elif [ -f '/usr/bin/wget' ]; then
+  WGET='/usr/bin/wget';
+elif [ -f '/bin/wget' ]; then
+  WGET='/bin/wget';
+elif [ -f '/sbin/wget' ]; then
+  WGET='/sbin/wget';
 fi
-CURL=$(which curl)
-if [ -f /usr/local/bin/curl ]; then
-  CURL='/usr/local/bin/curl'
-else if [ -f /usr/bin/curl ]; then
-  CURL='/usr/bin/curl'
-else if [ -f /bin/curl ]; then
-  CURL='/bin/curl'
-else if [ -f /sbin/curl ]; then
-  CURL='/sbin/curl'
+
+CURL=$(which curl);
+if [ -f '/usr/local/bin/curl' ]; then
+  CURL='/usr/local/bin/curl';
+elif [ -f '/usr/bin/curl' ]; then
+  CURL='/usr/bin/curl';
+elif [ -f '/bin/curl' ]; then
+  CURL='/bin/curl';
+elif [ -f '/sbin/curl' ]; then
+  CURL='/sbin/curl';
 fi
+
 #############################
 # DECLARATION DES FONCTIONS #
 #############################

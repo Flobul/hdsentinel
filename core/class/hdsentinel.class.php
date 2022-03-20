@@ -20,7 +20,7 @@ require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 
 class hdsentinel extends eqLogic
 {
-    public static $_hdsentinelVersion = '0.83';
+    public static $_hdsentinelVersion = '0.84';
 
     public static function getApiXmlResult($_xml, $_ip)
     {
@@ -425,7 +425,8 @@ class hdsentinel extends eqLogic
 
         if (!$this->sendSshCmd([$cmd3])) {
             log::add(__CLASS__, 'info', __('Lancement du cron distant', __FILE__));
-            $cmd = $this->getSudoCmd() . '[ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab /etc/cron.daily/hdsentinel && echo $?) || (' . $this->getSudoCmd() . '/usr/bin/crontab /etc/cron.daily/hdsentinel && echo $?)';
+            $cmd = '([ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab /etc/cron.daily/hdsentinel) && echo $?) || ';
+            $cmd .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab /etc/cron.daily/hdsentinel) && echo $?)';
             return $this->sendSshCmd([$cmd]);
         }
         return false;
@@ -440,9 +441,8 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Suppression du cron distant', __FILE__));
-        $cmd1 = '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/opt/bin/crontab -; echo $? || ' . $this->getSudoCmd() . '/usr/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/usr/bin/crontab -; echo $?';
-
-        //$cmd1 = $this->getSudoCmd() . "$(which crontab) -l | sed '/hdsentinel_to_jeedom_pub/d' | $(which crontab) -; echo $?;";
+        $cmd1 = '[ -f "/opt/bin/crontab" ] && ((' . $this->getSudoCmd() . '/opt/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /opt/bin/crontab -); echo $?) || ';
+        $cmd1 .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /usr/bin/crontab -); echo $?)';
         $cmd2 = $this->getSudoCmd() . "rm /etc/cron.daily/hdsentinel; echo $?;";
         return $this->sendSshCmd([$cmd1,$cmd2]);
     }
@@ -456,10 +456,9 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Arrêt du cron distant', __FILE__));
-        $cmd1 = '[ -f "/opt/bin/crontab" ] && ' . $this->getSudoCmd() . '/opt/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/opt/bin/crontab -; echo $?';
-        $cmd2 = '[ -f "/usr/bin/crontab" ] && ' . $this->getSudoCmd() . '/usr/bin/crontab -l | sed "/hdsentinel_to_jeedom_pub/d" | ' . $this->getSudoCmd() . '/usr/bin/crontab -; echo $?';
-
-        return $this->sendSshCmd([$cmd1,$cmd2]);
+        $cmd = '[ -f "/opt/bin/crontab" ] && ((' . $this->getSudoCmd() . '/opt/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /opt/bin/crontab -); echo $?) || ';
+        $cmd .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /usr/bin/crontab -); echo $?)';
+        return $this->sendSshCmd([$cmd]);
     }
 
 
@@ -472,7 +471,8 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Statut du cron distant', __FILE__));
-        $cmd = '[ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l) || (' . $this->getSudoCmd() . '/usr/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l)';
+        $cmd = '([ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab -u root -l | grep hdsentinel_to_jeedom_pub | wc -l)) || ';
+        $cmd .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab -u root -l | grep hdsentinel_to_jeedom_pub | wc -l))';
         return $this->sendSshCmd([$cmd]);
     }
 
