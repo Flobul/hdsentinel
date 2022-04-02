@@ -304,9 +304,22 @@ $('.hdsentinelAction[data-action=test]').on('click', function () {
     });
 });
 
+$('#windows').off('click').on('click', function() {
+  if($('#windows').prop("checked")) {
+    $('.underLinux').hide();
+  } else {
+    $('.underLinux').show();
+  }
+});
+
 function printEqLogic(_eqLogic) {
 
   $('#table_infoseqlogic tbody').empty();
+  if(_eqLogic.configuration.windows && _eqLogic.configuration.windows == 1) {
+    $('.underLinux').hide();
+  } else {
+    $('.underLinux').show();
+  }
 
   //affichage des configurations du device
   printEqLogicHelper("{{Version de HDSentinel installée}}", "Installed_version", _eqLogic);

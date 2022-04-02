@@ -165,9 +165,15 @@ $eqLogics = eqLogic::byType($plugin->getId());
 								<label class="col-sm-3 control-label">{{Adresse IP}}
 									<sup><i class="fas fa-question-circle tooltips" title="{{Renseignez l'adresse IP}}"></i></sup>
 								</label>
-								<div class="col-sm-7">
+								<div class="col-sm-5">
 									<input class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="addressip" type="text" placeholder="{{saisir l'adresse IP}}">
 								</div>
+								<div class="col-sm-1">
+									<input type="checkbox" class="eqLogicAttr form-control" id="windows" data-l1key="configuration" data-l2key="windows" />
+								</div>
+								<label class="col-sm-2 control-label" style="text-align:left;">{{Windows}}
+									<sup><i class="fas fa-question-circle tooltips" title="{{Cochez cette case si l'appareil fait tourner HDSentinel sous Windows (voir la documentation pour l'installation)}}"></i></sup>
+								</label>
 							</div>
 							<div class="form-group">
 								<label class="col-sm-3 control-label">{{Port SSH}}
@@ -177,7 +183,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
 									<input class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="portssh" type="text" placeholder="{{saisir le port SSH}}">
 								</div>
 							</div>
-							<div class="form-group">
+							<div class="form-group underLinux">
 								<label class="col-sm-3 control-label">{{Identifiant}}
 									<sup><i class="fas fa-question-circle tooltips" title="{{Renseignez l'identifiant}}"></i></sup>
 								</label>
@@ -201,9 +207,9 @@ $eqLogics = eqLogic::byType($plugin->getId());
 									<input type="checkbox" class="eqLogicAttr form-control" id="widgetTemplate" data-l1key="configuration" data-l2key="widgetTemplate" />
 								</div>
 							</div>
-							<legend><i class="fas fa-rocket"></i> {{Gestion distante}}</legend>
+							<legend class="underLinux"><i class="fas fa-rocket"></i> {{Gestion distante}}</legend>
 
-							<div class="form-group">
+							<div class="form-group underLinux">
 								<label class="col-sm-3 control-label">{{Auto-actualisation}}
 									<sup><i class="fas fa-question-circle tooltips" title="{{Fréquence de rafraîchissement du cron}}</br>{{Pensez à sauvegarder, puis Arrêter et supprimer le cron et Lancer.}}"></i></sup>
 								</label>
@@ -219,7 +225,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
 								</div>
 							</div>
 
-                            <div class="form-group">
+                            <div class="form-group underLinux">
                                 <label class="col-sm-3 control-label">{{Envoi des fichiers nécessaires}}</label>
                                 <div class="col-sm-2">
                                     <a class="btn btn-warning hdsentinelAction" data-action="sendFiles"><i class="fas fa-upload"></i> {{Envoyer}}</a>
@@ -233,7 +239,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                 </div>
                             </div>
 
-                            <div class="form-group">
+                            <div class="form-group underLinux">
                                 <label class="col-sm-3 control-label">{{Gestion du cron distant}}</label>
                                 <div class="col-sm-1">
                                     <a class="hdsentinelAction" data-action="checkremotecron"></a>
@@ -249,14 +255,14 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                     <a class="btn btn-success hdsentinelAction" data-action="getLog"><i class="far fa-file-alt"></i> {{Log}}</a>
                                 </div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group underLinux">
                                 <label class="col-sm-3 control-label">{{Gestion du cron automatique}}</label>
                                 <div class="col-sm-2">
                                     <a class="btn btn-danger hdsentinelAction" data-action="changeAutoModeRemote"></a>
                                     <input type="hidden" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="remoteDaemonAuto"/>
                                 </div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group underLinux">
                                 <label class="col-sm-3 control-label">{{Tester}}</label>
                                 <div class="col-sm-2">
                                     <a class="btn btn-success hdsentinelAction" data-action="test"><i class="far fa-file-alt"></i> {{Tester}}</a>

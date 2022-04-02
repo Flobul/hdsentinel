@@ -20,7 +20,7 @@ require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 
 class hdsentinel extends eqLogic
 {
-    public static $_hdsentinelVersion = '0.84';
+    public static $_hdsentinelVersion = '0.85';
 
     public static function getApiXmlResult($_xml, $_ip)
     {
@@ -31,6 +31,8 @@ class hdsentinel extends eqLogic
          * @param			$_ip      string     Adresse IP
          * @return			          array      Tableau des commandes
          */
+        log::add(__CLASS__, 'debug', 'Début getApiXmlResult'. json_encode($_xml['General_Information']));
+
         $array = array();
         if (isset($_xml['General_Information'])) {
             $array['name'] = $_xml['General_Information']['Computer_Information']['Computer_Name'];
@@ -47,7 +49,11 @@ class hdsentinel extends eqLogic
             $eqLogic->setEqType_name('hdsentinel');
             $eqLogic->setIsEnable(1);
         }
+        log::add(__CLASS__, 'debug', 'Début a2o' .print_r($array,true));
+
         utils::a2o($eqLogic, $array);
+        log::add(__CLASS__, 'debug', 'Fin a2o');
+
         try {
             $eqLogic->save();
         } catch(Exception $e) {
@@ -127,7 +133,12 @@ class hdsentinel extends eqLogic
          * @param			$_string      string       Temps reçu
          * @return			              string       Temps converti
          */
+        log::add(__CLASS__, 'info', __('convertCurrentDateAndTime XML1 ', __FILE__) . $_string);
+        log::add(__CLASS__, 'info', __('convertCurrentDateAndTime XML2 ', __FILE__) . $_string);
         $datetime = DateTime::createFromFormat("d-n-y H:i:s", $_string);
+        if($datetime === false) {
+            $datetime = DateTime::createFromFormat("d/m/Y H:i:s", $_string);
+        }
         return $datetime->format('Y-m-d H:i:s');
     }
 
@@ -141,11 +152,33 @@ class hdsentinel extends eqLogic
          * @return			|*Cette fonction ne retourne pas de valeur*|
          */
         foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
-            if ($eqLogic->getConfiguration('remoteDaemonAuto', '0') == 1) {
-                log::add(__CLASS__, 'info', 'Redémarrage cron remote ' . $eqLogic->getName());
-                $eqLogic->launchCron($eqLogic->getId());
+            if ($eqLogic->getConfiguration('windows', false)) {
+
+                $url = 'http://'.$eqLogic->getConfiguration('addressip').':'. $eqLogic->getConfiguration('portssh').'/xml';
+                $request_http = new com_http($url, ' ', $eqLogic->getConfiguration('password'));
+                $result = $request_http->exec();
+
+                $start = strpos($result,"<?xml");
+                $end = '</Hard_Disk_Sentinel>';
+
+                $result = substr($result, $start);
+                $result = substr($result, 0, strpos($result,$end) + strlen($end));
+
+                try {
+                    $xml_action = new SimpleXMLElement($result);
+                    $result = json_decode(json_encode($xml_action), true);
+                    self::getApiXmlResult($result, $eqLogic->getConfiguration('addressip'));
+                } catch (Exception $e) {
+                    log::add(__CLASS__, 'info', __('Erreur XML', __FILE__));
+                }
+
+            } else {
+                /*if ($eqLogic->getConfiguration('remoteDaemonAuto', '0') == 1) {
+                    log::add(__CLASS__, 'info', 'Redémarrage cron remote ' . $eqLogic->getName());
+                    $eqLogic->launchCron($eqLogic->getId());
+                }
+                $eqLogic->getLog();*/
             }
-            $eqLogic->getLog();
         }
     }
 
@@ -215,17 +248,6 @@ class hdsentinel extends eqLogic
         return $word;
     }
 
-    public function getHtmlDisksFullResult()
-    {
-        $plugin = plugin::byId('hdsentinel');
-        $cmd = $this->getSudoCmd();
-        $cmd .='bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
-        $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
-        $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
-        $cmd .= ' -o html';
-        return $this->sendSshCmd([$cmd]);
-    }
-
     public static function getApiHtmlResult($_html, $_ip)
     {
         /**
@@ -242,6 +264,17 @@ class hdsentinel extends eqLogic
             return true;
         }
         return false;
+    }
+
+    public function getHtmlDisksFullResult()
+    {
+        $plugin = plugin::byId('hdsentinel');
+        $cmd = $this->getSudoCmd();
+        $cmd .='bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+        $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
+        $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
+        $cmd .= ' -o html';
+        return $this->sendSshCmd([$cmd]);
     }
 
     public function createCmdsFromConfig($_cmd, $_diskNb)
@@ -471,7 +504,7 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Statut du cron distant', __FILE__));
-        $cmd = '[ -f "/opt/bin/crontab" ] && ((' . $this->getSudoCmd() . '/opt/bin/crontab -u root -l | grep hdsentinel_to_jeedom_pub | wc -l)) || ';
+        $cmd = '([ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab -u root -l | grep hdsentinel_to_jeedom_pub | wc -l)) || ';
         $cmd .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab -u root -l | grep hdsentinel_to_jeedom_pub | wc -l))';
         return $this->sendSshCmd([$cmd]);
     }
