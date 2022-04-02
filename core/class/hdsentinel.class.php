@@ -63,18 +63,42 @@ class hdsentinel extends eqLogic
         $disk = array();
         for ($i = 0; $i <= 10; $i++) {
             if (array_key_exists('Physical_Disk_Information_Disk_'.$i, $_xml)) {
-                $disk[$i]['Hard_Disk_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Number'];
-                $disk[$i]['Hard_Disk_Device'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Device'];
-                $disk[$i]['Hard_Disk_Serial_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Serial_Number'];
-                $disk[$i]['Total_Size'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Total_Size'];
-                $disk[$i]['Current_Temperature'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Current_Temperature'];
-                $disk[$i]['Maximum_temperature_during_entire_lifespan'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Maximum_temperature_during_entire_lifespan'];
-                $disk[$i]['Power_on_time'] = self::translatePowerOnTime($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Power_on_time']);
-                $disk[$i]['Estimated_remaining_lifetime'] = self::translateEstimatedRemainingLifetime($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Estimated_remaining_lifetime']);
-                $disk[$i]['Health'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Health'];
-                $disk[$i]['Performance'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Performance'];
-                $disk[$i]['Description'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Description'];
-                $disk[$i]['Lifetime_writes'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Lifetime_writes'];
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Number'])) {
+                    $disk[$i]['Hard_Disk_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Number'];
+                }
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Device'])) {
+                    $disk[$i]['Hard_Disk_Device'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Device'];
+                }
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Serial_Number'])) {
+                    $disk[$i]['Hard_Disk_Serial_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Serial_Number'];
+                }
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Total_Size'])) {
+                    $disk[$i]['Total_Size'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Total_Size'];
+                }
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Current_Temperature'])) {
+                    $disk[$i]['Current_Temperature'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Current_Temperature'];
+                }
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Maximum_temperature_during_entire_lifespan'])) {
+                    $disk[$i]['Maximum_temperature_during_entire_lifespan'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Maximum_temperature_during_entire_lifespan'];
+                }
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Power_on_time'])) {
+                    $disk[$i]['Power_on_time'] = self::translatePowerOnTime($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Power_on_time']);
+                }
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Estimated_remaining_lifetime'])) {
+                    $disk[$i]['Estimated_remaining_lifetime'] = self::translateEstimatedRemainingLifetime($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Estimated_remaining_lifetime']);
+                }
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Health'])) {
+                    $disk[$i]['Health'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Health'];
+                }
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Performance'])) {
+                    $disk[$i]['Performance'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Performance'];
+                }
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Description'])) {
+                    $disk[$i]['Description'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Description'];
+                }
+                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Lifetime_writes'])) {
+                    $disk[$i]['Lifetime_writes'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Lifetime_writes'];
+                }
             }
         }
 
