@@ -1,7 +1,7 @@
 #!/bin/bash
 # Contributor: Flobul <flobul.jeedom@gmail.com>
 
-SCRIPT_VERSION='0.17'
+SCRIPT_VERSION='0.18'
 if [ -e  /etc/synoinfo.conf ]; then
   arch=`uname -m`;
   pwd=`pwd`;
@@ -65,8 +65,8 @@ function main ()
     wget -O /usr/local/bin/hdsentinel "$url";
   else
     wget -O $pwd/hdsentinel.$extension "$url";
-    bash -c "$uncompress -d $pwd/hdsentinel.$extension"
-    mv $pwd/hdsentinel /usr/local/bin/hdsentinel
+    bash -c "$uncompress -f -d $pwd/hdsentinel.$extension"
+    mv -f $pwd/hdsentinel /usr/local/bin/hdsentinel
     ##rm $pwd/hdsentinel.$extension
   fi
   chmod +x /usr/local/bin/hdsentinel;
