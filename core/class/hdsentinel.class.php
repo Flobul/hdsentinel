@@ -20,7 +20,8 @@ require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 
 class hdsentinel extends eqLogic
 {
-    public static $_hdsentinelVersion = '0.85';
+    public static $_hdsentinelVersion = '0.90';
+    public static $_widgetPossibility = array('custom' => true);
 
     public static function getApiXmlResult($_xml, $_ip)
     {
@@ -39,6 +40,10 @@ class hdsentinel extends eqLogic
             $array['logicalId'] = $_xml['General_Information']['Computer_Information']['MAC_Address'];
             $array['configuration']['addressip'] = $_ip;
             $_xml['General_Information']['Application_Information']['Current_Date_And_Time'] = self::convertCurrentDateAndTime($_xml['General_Information']['Application_Information']['Current_Date_And_Time']);
+            if (!isset($_xml['General_Information']['Computer_Information']['Uptime'])) {
+                $_xml['General_Information']['Computer_Information']['Uptime'] = $_xml['General_Information']['Computer_Information']['System_Uptime'];
+            }
+
             $array['configuration'] = array_merge($_xml['General_Information']['Computer_Information'], $_xml['General_Information']['Application_Information'], $_xml['General_Information']['System_Information']);
         }
         log::add(__CLASS__, 'debug', 'Début equipement');
@@ -157,8 +162,6 @@ class hdsentinel extends eqLogic
          * @param			$_string      string       Temps reçu
          * @return			              string       Temps converti
          */
-        log::add(__CLASS__, 'info', __('convertCurrentDateAndTime XML1 ', __FILE__) . $_string);
-        log::add(__CLASS__, 'info', __('convertCurrentDateAndTime XML2 ', __FILE__) . $_string);
         $datetime = DateTime::createFromFormat("d-n-y H:i:s", $_string);
         if($datetime === false) {
             $datetime = DateTime::createFromFormat("d/m/Y H:i:s", $_string);
@@ -288,6 +291,25 @@ class hdsentinel extends eqLogic
             return true;
         }
         return false;
+    }
+
+    public function preSave()
+    {
+        if ($this->getConfiguration('manually', false)) {
+            $cmdRefresh = $this->getCmd('action', 'refresh');
+            if (!is_object($cmdRefresh)) {
+                log::add(__CLASS__, 'debug', 'Créaction de la commande Rafraîchir');
+                $cmdRefresh = new hdsentinelCmd();
+                $cmdRefresh->setLogicalId('refresh');
+                $cmdRefresh->setEqLogic_id($this->getId());
+                $cmdRefresh->setName(__('Rafraîchir',__FILE__));
+                $cmdRefresh->setIsVisible(true);
+                $cmdRefresh->setType('action');
+                $cmdRefresh->setSubType('other');
+                $cmdRefresh->setGeneric_type('DONT');
+                $cmdRefresh->save();
+            }
+        }
     }
 
     public function getHtmlDisksFullResult()
@@ -759,14 +781,49 @@ class hdsentinel extends eqLogic
         log::add(__CLASS__, 'info', __('Test de la commande - résultat : ', __FILE__) . $return);
         return $return;
     }
+
+    public function refresh()
+    {
+        /**
+         * Teste un envoie du XML complet, du coup, permet de générer les commandes
+         *
+         * @param			|*Cette fonction ne retourne pas de valeur*|
+         *       			|*Cette fonction ne retourne pas de valeur*|
+         */
+        log::add(__CLASS__, 'info', __('Refresh commande', __FILE__));
+
+        $cmd = "HDSENTINEL=$(which hdsentinel);
+        if [ -f '/usr/local/bin/hdsentinel' ];
+          then HDSENTINEL='/usr/local/bin/hdsentinel';
+        elif [ -f '/usr/bin/hdsentinel' ]; then
+          HDSENTINEL='/usr/bin/hdsentinel';
+        elif [ -f '/bin/hdsentinel' ]; then
+          HDSENTINEL='/bin/hdsentinel';
+        elif [ -f '/sbin/hdsentinel' ]; then
+          HDSENTINEL='/sbin/hdsentinel';
+        fi; ";
+        $cmd .= $this->getSudoCmd();
+        $cmd .= '$HDSENTINEL -dump -xml';
+        $return = $this->sendSshCmd([$cmd]);
+
+        try {
+            $xml_action = new SimpleXMLElement($return);
+            $result = json_decode(json_encode($xml_action), true);
+            self::getApiXmlResult($result, $this->getConfiguration('addressip'));
+        } catch (Exception $e) {
+            log::add(__CLASS__, 'info', __('Erreur XML', __FILE__));
+        }
+        return $return;
+    }
 }
 
 class hdsentinelCmd extends cmd
 {
-    public static $_widgetPossibility = array('custom' => false);
+    public static $_widgetPossibility = array('custom' => true);
 
     public function execute($_options = null)
     {
+        $eqLogic = $this->getEqLogic();
         if ($this->getLogicalId() == '') {
             $paramaction = $this->getId();
         } else {
@@ -778,7 +835,10 @@ class hdsentinelCmd extends cmd
                 log::add('hdsentinel', 'debug', __('TYPE info ', __FILE__));
                 break;
             case 'action':
-                log::add('hdsentinel', 'debug', __('TYPE action ', __FILE__). $paramaction . ' avec option : '.$_options);
+                log::add('hdsentinel', 'debug', __('TYPE action ', __FILE__). $paramaction . ' avec option : '. json_encode($_options));
+                if ($this->getLogicalId() == 'refresh') {
+                    $eqLogic->refresh();
+                }
                 break;
             default:
                 log::add('hdsentinel', 'debug', __('TYPE autre : ', __FILE__));

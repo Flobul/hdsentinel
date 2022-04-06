@@ -312,13 +312,37 @@ $('#windows').off('click').on('click', function() {
   }
 });
 
+$('#manually').off('click').on('click', function() {
+  if($('#manually').prop("checked")) {
+    $('.manually').hide();
+    $('.automatically').show();
+    if($('#windows').prop("checked")) {
+      $('.underLinux').hide();
+    } else {
+      $('.underLinux').show();
+    }
+  } else {
+    $('.manually').show();
+    $('.automatically').hide();
+    $('.underLinux').show();
+  }
+});
+
 function printEqLogic(_eqLogic) {
 
   $('#table_infoseqlogic tbody').empty();
-  if(_eqLogic.configuration.windows && _eqLogic.configuration.windows == 1) {
-    $('.underLinux').hide();
+
+  if(_eqLogic.configuration.manually && _eqLogic.configuration.manually == 1) {
+    $('.manually').hide();
+    $('.automatically').show();
+    if(_eqLogic.configuration.windows && _eqLogic.configuration.windows == 1) {
+      $('.underLinux').hide();
+    } else {
+      $('.underLinux').show();
+    }
   } else {
-    $('.underLinux').show();
+    $('.manually').show();
+    $('.automatically').hide();
   }
 
   //affichage des configurations du device
@@ -329,6 +353,7 @@ function printEqLogic(_eqLogic) {
   printEqLogicHelper("{{Version du système}}", "OS_Version", _eqLogic);
   printEqLogicHelper("{{ID du processus}}", "Process_ID", _eqLogic);
   printEqLogicHelper("{{Démarré depuis}}", "Uptime", _eqLogic);
+  printEqLogicHelper("{{Démarré depuis}}", "System_Uptime", _eqLogic);
 
   if ($('.eqLogicAttr[data-l1key=configuration][data-l2key=addressip]').value() == ''
       || $('.eqLogicAttr[data-l1key=configuration][data-l2key=portssh]').value() == ''
