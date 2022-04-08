@@ -59,15 +59,20 @@ $eqLogics = hdsentinel::byType('hdsentinel');
         foreach ($eqLogics as $eqLogic) {
             $tabActive = ($i<1)?'active':null;
             echo '<div role="tabpanel" class="tab-pane ' .$tabActive.'" id="'.$eqLogic->getId().'">';
-            $html_result = $eqLogic->getHtmlDisksFullResult();
-            $data_path = dirname(__FILE__) . '/../../core/data';
-						if (!is_dir($data_path)) {
-                mkdir($data_path);
-            }
-            usleep(10);
-            $html = file_get_contents($data_path . '/hdsentinel_'.$eqLogic->getId().'.html');
-            if ($html) {
-                echo $html;
+            if ($eqLogic->getConfiguration('manually', false)) {
+                $html_result = $eqLogic->getHtmlDisksFullResult();
+                $data_path = dirname(__FILE__) . '/../../core/data';
+                if (!is_dir($data_path)) {
+                    mkdir($data_path);
+                }
+                usleep(10);
+                $html = file_get_contents($data_path . '/hdsentinel_'.$eqLogic->getId().'.html');
+                if ($html) {
+                    echo $html;
+                }
+            } else {
+                $html_result = $eqLogic->getHtmlDisksFullResultManually();
+				echo $html_result;
             }
             echo '</div>';
             $i++;

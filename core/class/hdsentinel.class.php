@@ -820,6 +820,23 @@ class hdsentinel extends eqLogic
         }
         return $return;
     }
+
+    public function getHtmlDisksFullResultManually()
+    {
+        $cmd = "HDSENTINEL=$(which hdsentinel);
+        if [ -f '/usr/local/bin/hdsentinel' ];
+          then HDSENTINEL='/usr/local/bin/hdsentinel';
+        elif [ -f '/usr/bin/hdsentinel' ]; then
+          HDSENTINEL='/usr/bin/hdsentinel';
+        elif [ -f '/bin/hdsentinel' ]; then
+          HDSENTINEL='/bin/hdsentinel';
+        elif [ -f '/sbin/hdsentinel' ]; then
+          HDSENTINEL='/sbin/hdsentinel';
+        fi; ";
+        $cmd .= $this->getSudoCmd();
+        $cmd .= '$HDSENTINEL -html -r /tmp/hdsentinel.html >/dev/null 2>&1 && cat /tmp/hdsentinel.html';
+        return $this->sendSshCmd([$cmd]);
+    }
 }
 
 class hdsentinelCmd extends cmd
