@@ -122,7 +122,7 @@ class hdsentinel extends eqLogic
                             $value = $split[0];
                             $unite = $split[1];
                             if ($unite != '') {
-                                $cmd->setUnite($unite);
+                                $cmd->setUnite($unite)->save();
                             }
                         }
                         log::add(__CLASS__, 'debug', 'Mise à jour de la commande de ' . $eqLogic->getName() . ' : ' .  $summary . ' - value: ' . $value . ' - unite: ' . $unite);
