@@ -55,7 +55,6 @@ class hdsentinel extends eqLogic
             $eqLogic->setIsEnable(1);
         }
         log::add(__CLASS__, 'debug', 'Début a2o' .print_r($array,true));
-
         utils::a2o($eqLogic, $array);
         log::add(__CLASS__, 'debug', 'Fin a2o');
 
@@ -111,8 +110,6 @@ class hdsentinel extends eqLogic
         $all_cmds = self::loadCmdFromConf();
         foreach ($disk as $nb => $summaries) {
             foreach ($summaries as $summary => $value) {
-                log::add(__CLASS__, 'debug', 'Début commandes y: ' . $summary . '- value: ' . $value);
-
                 if ($value != '' && $value != '?' && !preg_match('/^Unknown/', $value)) {
                     $cmd = $eqLogic->searchCmd($summary . " " . $summaries['Hard_Disk_Number'], $summary . " " . $summaries['Hard_Disk_Number']);
                     if (!is_object($cmd)) {
@@ -120,7 +117,15 @@ class hdsentinel extends eqLogic
                             $eqLogic->createCmdsFromConfig($all_cmds[$summary], $summaries['Hard_Disk_Number']);
                         }
                     } else {
-                        log::add(__CLASS__, 'debug', 'Début commandes z: ' . $summary . '- value: ' . $value);
+                        if ($cmd->getSubType() == 'numeric') {
+                            $split = explode(' ', $value);
+                            $value = $split[0];
+                            $unite = $split[1];
+                            if ($unite != '') {
+                                $cmd->setUnite($unite);
+                            }
+                        }
+                        log::add(__CLASS__, 'debug', 'Mise à jour de la commande de ' . $eqLogic->getName() . ' : ' .  $summary . ' - value: ' . $value . ' - unite: ' . $unite);
                         $cmd->event($value);
                     }
                 }
