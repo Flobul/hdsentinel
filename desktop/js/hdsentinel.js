@@ -32,7 +32,7 @@ function prettyPrintDisplayAsTable() {
   }
 }
 
-$('#bt_hdsentinelDocumentation').off('click').on('click',function(){
+$('.bt_hdsentinelDocumentation').off('click').on('click',function(){
     window.open($(this).attr("data-location"), "_blank", null);
 });
 

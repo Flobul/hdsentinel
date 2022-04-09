@@ -13,10 +13,15 @@ $eqLogics = eqLogic::byType($plugin->getId());
       border-radius:10px;
       padding:1px 3px;
       font-size:.75em;
-			font-weight:900;
+      font-weight:900;
       position:absolute;
       margin-left:57px;
       color:white;
+  }
+
+  .bt_hdsentinelDocumentation {
+      font-size: 2.3rem;
+      color: mediumslateblue;
   }
 </style>
 
@@ -48,53 +53,73 @@ $eqLogics = eqLogic::byType($plugin->getId());
 				<span>{{Page Html}}</span>
 			</div>
 
-			<div class="cursor logoSecondary" id="bt_hdsentinelDocumentation" data-location="<?=$plugin->getDocumentation()?>">
+			<div class="cursor logoSecondary bt_hdsentinelDocumentation" data-location="<?=$plugin->getDocumentation()?>">
 				<i class="icon loisir-livres"></i>
 				<br><br>
 				<span>{{Documentation}}</span>
 			</div>
 		</div>
 
-
-		<legend><i class="fas fa-table"></i> {{Mes serveurs Hard Disk Sentinel}}</legend>
 		<?php
-		if (count($eqLogics) == 0) {
-			echo '<br/><div class="text-center" style="font-size:1.2em;font-weight:bold;">{{Aucun équipement Template n\'est paramétré, cliquer sur "Ajouter" pour commencer}}</div>';
-		} else {
-			// Champ de recherche
-			echo '<div class="input-group" style="margin:5px;">';
-			echo '<input class="form-control roundedLeft" placeholder="{{Rechercher}}" id="in_searchEqlogic"/>';
-			echo '<div class="input-group-btn">';
-			echo '<a id="bt_resetSearch" class="btn" style="width:30px"><i class="fas fa-times"></i></a>';
-			echo '<a class="btn roundedRight hidden" id="bt_pluginDisplayAsTable" data-coreSupport="1" data-state="0"><i class="fas fa-grip-lines"></i></a>';
-			echo '</div>';
-			echo '</div>';
-			// Liste des équipements du plugin
-			echo '<div class="eqLogicThumbnailContainer">';
-			foreach ($eqLogics as $eqLogic) {
-                $nbDisks = $eqLogic->getNbDisksByEqLogic();
-                $pourcentHealth = 0;
-                for($i=0 ; $i < $nbDisks; $i++) {
-                    $nbName=($nbDisks < 1)?'':' '.$i;
-                    $health = $eqLogic->getCmd('info','Health'.$nbName);
-                    if (is_object($health)) {
-                        $pourcentHealth = ( intval($pourcentHealth) + $health->execCmd() );
-                    }
-                }
-                $pourcentHealth = ( intval($pourcentHealth) / intval($nbDisks) );
-                $colorHealth = ($pourcentHealth<90)?($pourcentHealth<75)?'red':'orange':'green';
-				$opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
+            function printeqLogicThumbnailContainer($_plugin, $_eqLogics, $_type) {
+                if ($_type) {
+                    $nom = 'manuelles';
+                    $logo = 'fas fa-edit';
+                    $link = $_plugin->getDocumentation() . '#Manuelle';
+                } else {
+                    $nom = 'auto';
+                    $logo = 'fas fa-hat-wizard';
+                    $link = $_plugin->getDocumentation() . '#Automatique';
 
-				echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
-                echo '<span class="classinfoEqlogic label-info" style="margin-top:19px;" title="{{Nombre de disques}}">'.$nbDisks.'</span>';
-                echo (is_nan($pourcentHealth)) ? '' : '<span class="classinfoEqlogic" style="margin-top:63px;background:'.$colorHealth.';" title="{{Santé (moyenne)}}">'.$pourcentHealth.' %</span>';
-				echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
-				echo '<br>';
-				echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
-				echo '</div>';
-			}
-			echo '</div>';
-		}
+                }
+
+                echo '<legend><i class="'.$logo.'"></i> {{Mes installations '.$nom.' de Hard Disk Sentinel}}
+                <span class="cursor logoSecondary bt_hdsentinelDocumentation" data-location="'.$link.'">
+				    <i class="fab fa-readme"></i>
+			    </span></legend>';
+                echo '<div class="eqLogicThumbnailContainer">';
+                foreach ($_eqLogics as $eqLogic) {
+                    if ($eqLogic->getConfiguration('manually', 'undefined') == $_type)  continue;
+                    $nbDisks = $eqLogic->getNbDisksByEqLogic();
+                    $pourcentHealth = 0;
+                    for($i=0 ; $i < $nbDisks; $i++) {
+                        $nbName=($nbDisks < 1)?'':' '.$i;
+                        $health = $eqLogic->getCmd('info','Health'.$nbName);
+                        if (is_object($health)) {
+                            $pourcentHealth = ( intval($pourcentHealth) + $health->execCmd() );
+                        }
+                    }
+                    $pourcentHealth = ( intval($pourcentHealth) / intval($nbDisks) );
+                    $colorHealth = ($pourcentHealth<90)?($pourcentHealth<75)?'red':'orange':'green';
+                    $opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
+
+                    echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
+                    echo '<span class="classinfoEqlogic label-info" style="margin-top:19px;" title="{{Nombre de disques}}">'.$nbDisks.'</span>';
+                    echo (is_nan($pourcentHealth)) ? '' : '<span class="classinfoEqlogic" style="margin-top:63px;background:'.$colorHealth.';" title="{{Santé (moyenne)}}">'.$pourcentHealth.' %</span>';
+                    echo '<img src="' . $_plugin->getPathImgIcon() . '"/>';
+                    echo '<br>';
+                    echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
+                    echo '</div>';
+                }
+                echo '</div>';
+            }
+
+            if (count($eqLogics) == 0) {
+                echo '<br/><div class="text-center" style="font-size:1.2em;font-weight:bold;">{{Aucun équipement Template n\'est paramétré, cliquez sur "Ajouter" pour commencer}}</div>';
+            } else {
+                // Champ de recherche
+                echo '<div class="input-group" style="margin:5px;">';
+                echo '<input class="form-control roundedLeft" placeholder="{{Rechercher}}" id="in_searchEqlogic"/>';
+                echo '<div class="input-group-btn">';
+                echo '<a id="bt_resetSearch" class="btn" style="width:30px"><i class="fas fa-times"></i></a>';
+                echo '<a class="btn roundedRight hidden" id="bt_pluginDisplayAsTable" data-coreSupport="1" data-state="0"><i class="fas fa-grip-lines"></i></a>';
+                echo '</div>';
+                echo '</div>';
+
+                // Liste des équipements du plugin
+                printeqLogicThumbnailContainer($plugin, $eqLogics, true);
+                printeqLogicThumbnailContainer($plugin, $eqLogics, false);
+            }
 		?>
 
 	</div>
