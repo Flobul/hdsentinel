@@ -807,8 +807,12 @@ class hdsentinel extends eqLogic
         elif [ -f '/sbin/hdsentinel' ]; then
           HDSENTINEL='/sbin/hdsentinel';
         fi; ";
+        $cmd .= "DISK='';
+        if [ -f '/dev/mmcblk0p1' ];
+          then DISK='-dev /dev/mmcblk0p1';
+        fi; ";
         $cmd .= $this->getSudoCmd();
-        $cmd .= '$HDSENTINEL -dump -xml';
+        $cmd .= '$HDSENTINEL -dump -xml $DISK';
         $return = $this->sendSshCmd([$cmd]);
 
         try {
