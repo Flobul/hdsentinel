@@ -809,7 +809,7 @@ class hdsentinel extends eqLogic
           HDSENTINEL='/sbin/hdsentinel';
         fi; ";
         $cmd .= "DISK='';
-        if [ -b '/dev/mmcblk0p1' ];
+        if [ -b '/dev/mmcblk0' ];
           then DISK='-dev /dev/mmcblk0';
         fi; ";
         $cmd .= $this->getSudoCmd();
