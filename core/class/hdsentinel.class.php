@@ -195,6 +195,7 @@ class hdsentinel extends eqLogic
 
                 $result = substr($result, $start);
                 $result = substr($result, 0, strpos($result,$end) + strlen($end));
+                log::add(__CLASS__, 'debug', __('Resultat XML', __FILE__) . $result);
 
                 try {
                     $xml_action = new SimpleXMLElement($result);
@@ -808,8 +809,8 @@ class hdsentinel extends eqLogic
           HDSENTINEL='/sbin/hdsentinel';
         fi; ";
         $cmd .= "DISK='';
-        if [ -f '/dev/mmcblk0p1' ];
-          then DISK='-dev /dev/mmcblk0p1';
+        if [ -b '/dev/mmcblk0p1' ];
+          then DISK='-dev /dev/mmcblk0';
         fi; ";
         $cmd .= $this->getSudoCmd();
         $cmd .= '$HDSENTINEL -dump -xml $DISK';
