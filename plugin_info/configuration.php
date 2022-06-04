@@ -75,14 +75,16 @@ sendVarToJS('version', hdsentinel::$_hdsentinelVersion);
     <legend><i class="icon loisir-darth"></i> {{Distant}}</legend>
 		<?php
             foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
-				echo '<div class="form-group">';
-				echo '<label class="col-lg-4 control-label">{{Version installée sur}} ' . $eqLogic->getName() . '</label>';
-				echo '<div class="col-lg-6">';
-				echo '<span>' . $eqLogic->getConfiguration('Installed_version','N/A') . ' </span>';
-				echo '<label> {{Dernière communication}} </label>';
-				echo '<span> (' . $eqLogic->getConfiguration('Current_Date_And_Time','N/A') . ')</span>';
-				echo '</div>';
-				echo '</div>';
+                if ($eqLogic->getConfiguration('manually', true)) {
+                    echo '<div class="form-group">';
+                    echo '<label class="col-lg-4 control-label">{{Version installée sur}} ' . $eqLogic->getName() . '</label>';
+                    echo '<div class="col-lg-6">';
+                    echo '<span>' . $eqLogic->getConfiguration('Installed_version','N/A') . ' </span>';
+                    echo '<label> {{Dernière communication}} </label>';
+                    echo '<span> (' . $eqLogic->getConfiguration('Current_Date_And_Time','N/A') . ')</span>';
+                    echo '</div>';
+                    echo '</div>';
+                }
 			}
 		?>
     <div class="form-group">

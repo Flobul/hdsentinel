@@ -70,7 +70,6 @@ $eqLogics = eqLogic::byType($plugin->getId());
                     $nom = 'auto';
                     $logo = 'fas fa-hat-wizard';
                     $link = $_plugin->getDocumentation() . '#Automatique';
-
                 }
 
                 echo '<legend><i class="'.$logo.'"></i> {{Mes installations '.$nom.' de Hard Disk Sentinel}}
@@ -79,7 +78,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
 			    </span></legend>';
                 echo '<div class="eqLogicThumbnailContainer">';
                 foreach ($_eqLogics as $eqLogic) {
-                    if ($eqLogic->getConfiguration('manually', 'undefined') == $_type)  continue;
+                    if ($eqLogic->getConfiguration('manually', 'undefined') != $_type)  continue;
                     $nbDisks = $eqLogic->getNbDisksByEqLogic();
                     $pourcentHealth = 0;
                     for($i=0 ; $i < $nbDisks; $i++) {
@@ -237,7 +236,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
 									<sup><i class="fas fa-question-circle tooltips" title="{{Cocher la case si vous installez manuellement le paquet HDSentinel (pas de cron, gestion via commande refresh)}}"></i></sup>
 								</label>
 								<div class="col-sm-7">
-									<input type="checkbox" class="eqLogicAttr form-control" id="manually" data-l1key="configuration" data-l2key="manually" />
+									<input type="checkbox" unchecked class="eqLogicAttr form-control" id="manually" data-l1key="configuration" data-l2key="manually" />
 								</div>
 							</div>
 							<legend class="manually"><i class="fas fa-rocket"></i> {{Gestion distante}}</legend>
