@@ -119,20 +119,22 @@ try {
 	if (init('action') == 'all') {
         $result = array();
 		foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
-            if (init('make') == 'launch') {
-                $result[] = $eqLogic->launchCron();
-            }
-            if (init('make') == 'upload') {
-                $result[] = $eqLogic->sendFile();
-            }
-            if (init('make') == 'update') {
-                $result[] = $eqLogic->installDependancy();
-            }
-            if (init('make') == 'stop') {
-                $result[] = $eqLogic->stopCron();
-            }
-            if (init('make') == 'stopNdelete') {
-                $result[] = $eqLogic->removeCron();
+            if ($eqLogic->getConfiguration('manually', true)) {
+                if (init('make') == 'launch') {
+                    $result[] = $eqLogic->launchCron();
+                }
+                if (init('make') == 'upload') {
+                    $result[] = $eqLogic->sendFile();
+                }
+                if (init('make') == 'update') {
+                    $result[] = $eqLogic->installDependancy();
+                }
+                if (init('make') == 'stop') {
+                    $result[] = $eqLogic->stopCron();
+                }
+                if (init('make') == 'stopNdelete') {
+                    $result[] = $eqLogic->removeCron();
+                }
             }
         }
         ajax::success($result);
