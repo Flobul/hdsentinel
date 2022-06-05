@@ -21,21 +21,23 @@ require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
 function hdsentinel_install() {
 
     message::add('hdsentinel', 'Cette mise à jour peut durer un certain temps : elle va stopper puis supprimer les cron actuels sur les appareils distants, puis renvoyer les scripts, installer les paquets le cron et le lancer.');
-    foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
-       if ($eqLogic->getConfiguration('manually', true)) {
-            $result = array();
-            //$result[] = $eqLogic->stopCron();
-            log::add('hdsentinel', 'info', __('=> Début mise à jour des scripts', __FILE__) . $eqLogic->getName());
-            $result['stop_remove'] = $eqLogic->removeCron();
-            log::add('hdsentinel', 'info', __('=> Cron supprimé ', __FILE__) . $eqLogic->getName() . ' => ' . $result['stop_remove']);
-            $result['send'] = $eqLogic->sendFile();
-            log::add('hdsentinel', 'info', __('=> Fichiers envoyés ', __FILE__) . $eqLogic->getName() . ' => ' . $result['send']);
-            $result['install'] = $eqLogic->installDependancy();
-            log::add('hdsentinel', 'info', __('=> Dépendances installées ', __FILE__) . $eqLogic->getName() . ' => ' . $result['install']);
-            $result['launch'] = $eqLogic->launchCron();
-            log::add('hdsentinel', 'info', __('=> Lancement cron ', __FILE__) . $eqLogic->getName() . ' => ' . $result['launch']);
-            $result['status'] = $eqLogic->statusCron();
-            log::add('hdsentinel', 'info', __('=> Fin mise à jour des scripts', __FILE__) . $eqLogic->getName() . ' - resultat : ' . json_encode($result));
+    if (config::byKey('autoUpdateRemote', 'hdsentinel', false, true)) {
+        foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
+           if ($eqLogic->getConfiguration('manually', true)) {
+                $result = array();
+                //$result[] = $eqLogic->stopCron();
+                log::add('hdsentinel', 'info', __('=> Début mise à jour des scripts', __FILE__) . $eqLogic->getName());
+                $result['stop_remove'] = $eqLogic->removeCron();
+                log::add('hdsentinel', 'info', __('=> Cron supprimé ', __FILE__) . $eqLogic->getName() . ' => ' . $result['stop_remove']);
+                $result['send'] = $eqLogic->sendFile();
+                log::add('hdsentinel', 'info', __('=> Fichiers envoyés ', __FILE__) . $eqLogic->getName() . ' => ' . $result['send']);
+                $result['install'] = $eqLogic->installDependancy();
+                log::add('hdsentinel', 'info', __('=> Dépendances installées ', __FILE__) . $eqLogic->getName() . ' => ' . $result['install']);
+                $result['launch'] = $eqLogic->launchCron();
+                log::add('hdsentinel', 'info', __('=> Lancement cron ', __FILE__) . $eqLogic->getName() . ' => ' . $result['launch']);
+                $result['status'] = $eqLogic->statusCron();
+                log::add('hdsentinel', 'info', __('=> Fin mise à jour des scripts', __FILE__) . $eqLogic->getName() . ' - resultat : ' . json_encode($result));
+            }
         }
     }
 }
@@ -43,21 +45,23 @@ function hdsentinel_install() {
 function hdsentinel_update() {
 
     message::add('hdsentinel', 'Cette mise à jour peut durer un certain temps : elle va stopper puis supprimer les cron actuels sur les appareils distants, puis renvoyer les scripts, installer les paquets le cron et le lancer.');
-    foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
-        if (!$eqLogic->getConfiguration('manually', false)) {
-            $result = array();
-            //$result[] = $eqLogic->stopCron();
-            log::add('hdsentinel', 'info', __('=> Début mise à jour des scripts ', __FILE__) . $eqLogic->getName());
-            $result['stop_remove'] = $eqLogic->removeCron();
-            log::add('hdsentinel', 'info', __('=> Cron supprimé ', __FILE__) . $eqLogic->getName() . ' => ' . $result['stop_remove']);
-            $result['send'] = $eqLogic->sendFile();
-            log::add('hdsentinel', 'info', __('=> Fichiers envoyés ', __FILE__) . $eqLogic->getName() . ' => ' . $result['send']);
-            $result['install'] = $eqLogic->installDependancy();
-            log::add('hdsentinel', 'info', __('=> Dépendances installées ', __FILE__) . $eqLogic->getName() . ' => ' . $result['install']);
-            $result['launch'] = $eqLogic->launchCron();
-            log::add('hdsentinel', 'info', __('=> Lancement cron ', __FILE__) . $eqLogic->getName() . ' => ' . $result['launch']);
-            $result['status'] = $eqLogic->statusCron();
-            log::add('hdsentinel', 'info', __('=> Fin mise à jour des scripts ', __FILE__) . $eqLogic->getName() . ' - resultat : ' . json_encode($result));
+    if (config::byKey('autoUpdateRemote', 'hdsentinel', false, true)) {
+        foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
+            if (!$eqLogic->getConfiguration('manually', false)) {
+                $result = array();
+                //$result[] = $eqLogic->stopCron();
+                log::add('hdsentinel', 'info', __('=> Début mise à jour des scripts ', __FILE__) . $eqLogic->getName());
+                $result['stop_remove'] = $eqLogic->removeCron();
+                log::add('hdsentinel', 'info', __('=> Cron supprimé ', __FILE__) . $eqLogic->getName() . ' => ' . $result['stop_remove']);
+                $result['send'] = $eqLogic->sendFile();
+                log::add('hdsentinel', 'info', __('=> Fichiers envoyés ', __FILE__) . $eqLogic->getName() . ' => ' . $result['send']);
+                $result['install'] = $eqLogic->installDependancy();
+                log::add('hdsentinel', 'info', __('=> Dépendances installées ', __FILE__) . $eqLogic->getName() . ' => ' . $result['install']);
+                $result['launch'] = $eqLogic->launchCron();
+                log::add('hdsentinel', 'info', __('=> Lancement cron ', __FILE__) . $eqLogic->getName() . ' => ' . $result['launch']);
+                $result['status'] = $eqLogic->statusCron();
+                log::add('hdsentinel', 'info', __('=> Fin mise à jour des scripts ', __FILE__) . $eqLogic->getName() . ' - resultat : ' . json_encode($result));
+            }
         }
     }
 }
