@@ -36,7 +36,7 @@ class hdsentinel extends eqLogic
 
         $array = array();
         if (isset($_xml['General_Information'])) {
-            $array['name'] = $_xml['General_Information']['Computer_Information']['Computer_Name'];
+            $array['name'] = $_xml['General_Information']['Computer_Information']['Computer_Name'] . ' ' . $_xml['General_Information']['Computer_Information']['MAC_Address'];
             $array['logicalId'] = $_xml['General_Information']['Computer_Information']['MAC_Address'];
             $array['configuration']['addressip'] = $_ip;
             $_xml['General_Information']['Application_Information']['Current_Date_And_Time'] = self::convertCurrentDateAndTime($_xml['General_Information']['Application_Information']['Current_Date_And_Time']);
