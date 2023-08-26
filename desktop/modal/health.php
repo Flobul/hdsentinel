@@ -65,7 +65,7 @@ $eqLogics = hdsentinel::byType('hdsentinel');
                 <h3 class="panel-title">
                     <?php
                     echo '<a class="accordion-toggle" data-toggle="collapse" data-parent="" href="#node_' . $eqLogic->getId() . '"' . $opacity . '>';
-                    echo $eqLogic->getHumanName(true) . ' - <span class="label label-info">' . $eqLogic->getConfiguration('OS_Version') . '</span>  - <span class="label label-info">' . $eqLogic->getConfiguration('Installed_version') . '</span>  - <span class="label label-info">Dernière mise à jour ' . $eqLogic->getConfiguration('Current_Date_And_Time') . '</span>';  
+                    echo $eqLogic->getHumanName(true) . ' - <span class="label label-info">' . $eqLogic->getConfiguration('OS_Version') . '</span>  - <span class="label label-info">' . $eqLogic->getConfiguration('Installed_version') . '</span>  - <span class="label label-info">Dernière mise à jour ' . $eqLogic->getConfiguration('Current_Date_And_Time') . '</span>';
                     echo '</a>';
                     ?>
                 </h3>
@@ -208,7 +208,7 @@ $eqLogics = hdsentinel::byType('hdsentinel');
     <?php
     }
     ?>
-  
+
 <table class="table table-condensed tablesorter" id="table_healthHdsentinel">
 	<thead>
 		<tr>
@@ -243,6 +243,14 @@ foreach ($eqLogics as $eqLogic) {
 </table>
   <script>
     $('#accordionHdsentinel').off('click', '.history').on('click', '.history', function (event) {
-        $('#md_modal2').dialog({title: "{{Historique}}"}).load('index.php?v=d&modal=cmd.history&id=' + $(this).data('cmd_id')).dialog('open')
+      if(typeof jeeFrontEnd === 'undefined') {
+        $('#md_cmdHistory').dialog({title: "{{Historique}}"}).load('index.php?v=d&modal=cmd.history&id=' + $(this).data('cmd_id')).dialog('open')
+      } else {
+        jeeDialog.dialog({
+          id: 'md_cmdHistory',
+          title: "{{Historique}}",
+          contentUrl: 'index.php?v=d&modal=cmd.history&id=' + event.target.getAttribute('data-cmd_id')
+        })
+      }
     });
   </script>
