@@ -1,0 +1,18 @@
+{
+    "name": "jeedom/hdsentinel",
+    "description": "Plugin Jeedom pour la récupération des infos SMART de ses disques durs",
+    "homepage" : "https://github.com/Flobul/Jeedom-HDSentinel",
+    "license" : "AGPL-3.0-or-later",
+    "authors" : [{
+            "name" : "Flobul",
+            "email" : "flobul.jeedom@gmail.com"
+        }
+    ],
+    "require": {
+        "phpseclib/phpseclib": "~3.0"
+    },
+    "config" : {
+        "optimize-autoloader": true,
+        "autoloader-suffix": "HDSentinel"
+    }
+}

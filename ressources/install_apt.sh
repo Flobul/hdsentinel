@@ -28,7 +28,7 @@ function main ()
   echo 50 "Récupération URL"
   if [ "$arch" == "armv6l" ]
   then
-    url="https://www.hdsentinel.com/hdslin/hdsentinel-018-arm.gz";
+    url="https://www.hdsentinel.com/hdslin/hdsentinel-020-arm.gz";
   elif [ "$arch" == "armv5" ]
   then
     url="https://www.hdsentinel.com/hdslin/armv5/hdsentinelarm";
@@ -38,22 +38,21 @@ function main ()
     url="https://www.hdsentinel.com/hdslin/hdsentinel-armv7.gz";
   elif [ "$arch" == "armv8" ]
   then
-    uncompress="bzip2";
-    url="https://www.hdsentinel.com/hdslin/hdsentinel-armv8.bz2";
-  elif [ "$arch" == "aarch64" ]
+    url="https://www.hdsentinel.com/hdslin/hdsentinel-armv8.zip";
+    elif [ "$arch" == "aarch64" ]
   then
     uncompress="bzip2";
     url="https://www.hdsentinel.com/hdslin/hdsentinel-armv8.bz2";
   elif [ "$arch" == "x86_64" ]
   then
-    url="https://www.hdsentinel.com/hdslin/hdsentinel-019c-x64.gz";
+    url="https://www.hdsentinel.com/hdslin/hdsentinel-020b-x64.zip";
   else
     if [ "$bits" -eq "32" ]
     then
       url="https://www.hdsentinel.com/hdslin/hdsentinel-019b.gz";
     elif [ "$bits" -eq "64" ]
     then
-      url="https://www.hdsentinel.com/hdslin/hdsentinel-019c-x64.gz";
+      url="https://www.hdsentinel.com/hdslin/hdsentinel-020b-x64.zip";
     fi
   fi
   extension="${url##*.}";

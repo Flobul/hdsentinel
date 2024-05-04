@@ -185,6 +185,15 @@ $eqLogics = eqLogic::byType($plugin->getId());
 									<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked />{{Visible}}</label>
 								</div>
 							</div>
+                            <div class="form-group">
+                                <label class="col-md-3 control-label">{{Mot de passe ou clé SSH ?}}</label>
+                                <div class="col-md-6">
+                                    <select id="maitreesclave" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="maitreesclave">
+                                        <option value="deporte">{{Distant (Mot de Passe)}}</option>
+                                        <option value="deporte-key">{{Distant (Clé SSH)}}</option>
+                                    </select>
+                                </div>
+                            </div>
 							<div class="form-group">
 								<label class="col-sm-3 control-label">{{Adresse IP}}
 									<sup><i class="fas fa-question-circle tooltips" title="{{Renseignez l'adresse IP}}"></i></sup>
@@ -215,14 +224,38 @@ $eqLogics = eqLogic::byType($plugin->getId());
 									<input class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="user" type="text" placeholder="{{saisir l'identifiant}}">
 								</div>
 							</div>
-							<div class="form-group">
-								<label class="col-sm-3 control-label"> {{Mot de passe}}
-									<sup><i class="fas fa-question-circle tooltips" title="{{Renseignez le mot de passe}}"></i></sup>
-								</label>
-								<div class="col-sm-7">
-									<input type="text" class="eqLogicAttr form-control inputPassword" data-l1key="configuration" data-l2key="password" />
-								</div>
-							</div>
+                            <div class="distant-password" style="display:none;">
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label"> {{Mot de passe}}
+                                        <sup><i class="fas fa-question-circle tooltips" title="{{Renseignez le mot de passe}}"></i></sup>
+                                    </label>
+                                    <div class="col-sm-7 input-group">
+                                        <input type="text" class="eqLogicAttr form-control inputPassword" data-l1key="configuration" data-l2key="password" />
+                                        <span class="input-group-btn">
+                                            <a class="btn btn-default form-control bt_showPass roundedRight"><i class="fas fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="distant-key" style="display:none;">
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">{{Passphrase}}
+                                        <sup><i class="fas fa-question-circle tooltips" title="{{Optionnel : Phrase secrète pour la clé SSH}}"></i></sup>
+                                    </label>
+                                    <div class="col-sm-6 input-group">
+                                        <input type="text" autocomplete="ssh-passphrase" class="eqLogicAttr form-control inputPassword roundedLeft" data-l1key="configuration" data-l2key="ssh-passphrase" placeholder="{{Saisir la passphrase SSH}}" />
+                                        <span class="input-group-btn">
+                                            <a class="btn btn-default form-control bt_showPass roundedRight"><i class="fas fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>    
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">{{Clé SSH}}</label>
+                                    <div class="col-md-8">
+                                        <textarea class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="ssh-key" placeholder="{{Saisir la clé SSH}}" wrap="off" spellcheck="false"></textarea>
+                                    </div>
+                                </div>
+                            </div>
 							<div class="form-group" style="display:none">
 								<label class="col-sm-3 control-label">{{Widget équipement}}
 									<sup><i class="fas fa-question-circle tooltips" title="{{Cochez la case pour utiliser le widget de l'appareil}}"></i></sup>

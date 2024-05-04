@@ -1,7 +1,5 @@
 {
-  "apt": {
-    "php-ssh2": {
-      "alternative": ["/php(.*?)-ssh2/"]
+    "composer" : {
+        "plugins/hdsentinel/" : {}
     }
-  }
 }
