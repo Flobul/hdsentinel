@@ -329,15 +329,15 @@ $('#manually').off('click').on('click', function() {
 });
 
 $(".eqLogicAttr[data-l2key='maitreesclave']").on('change', function () {
-	if (this.selectedIndex == 1) {
+	if (this.selectedIndex == 0) {
 	  $(".distant").show();
 	  $(".distant-password").show();
 	  $(".distant-key").hide();
-	} else if (this.selectedIndex == 2) {
+	} else if (this.selectedIndex == 1) {
 		$(".distant").show();
 		$(".distant-password").hide();
 		$(".distant-key").show();
-	} else { 
+	} else {
 		$(".distant").hide();
 	}
 });
