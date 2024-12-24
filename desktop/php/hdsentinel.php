@@ -61,7 +61,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
 		</div>
 
 		<?php
-            function printeqLogicThumbnailContainer($_plugin, $_eqLogics, $_type) {
+            function printeqLogicThumbnailContainer($_plugin, $_eqLogics, $_type = false) {
                 if ($_type) {
                     $nom = 'manuelles';
                     $logo = 'fas fa-edit';
@@ -78,14 +78,14 @@ $eqLogics = eqLogic::byType($plugin->getId());
 			    </span></legend>';
                 echo '<div class="eqLogicThumbnailContainer">';
                 foreach ($_eqLogics as $eqLogic) {
-                    if ($eqLogic->getConfiguration('manually', 'undefined') != $_type)  continue;
+                    if ($eqLogic->getConfiguration('manually', false) != $_type)  continue;
                     $nbDisks = $eqLogic->getNbDisksByEqLogic();
                     $pourcentHealth = 0;
                     for($i=0 ; $i < $nbDisks; $i++) {
                         $nbName=($nbDisks < 1)?'':' '.$i;
                         $health = $eqLogic->getCmd('info','Health'.$nbName);
                         if (is_object($health)) {
-                            $pourcentHealth = ( intval($pourcentHealth) + $health->execCmd() );
+                            $pourcentHealth = ( intval($pourcentHealth) + intval($health->execCmd()) );
                         }
                     }
                     $pourcentHealth = ( intval($pourcentHealth) / intval($nbDisks) );
@@ -248,7 +248,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                             <a class="btn btn-default form-control bt_showPass roundedRight"><i class="fas fa-eye"></i></a>
                                         </span>
                                     </div>
-                                </div>    
+                                </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">{{Clé SSH}}</label>
                                     <div class="col-md-8">
