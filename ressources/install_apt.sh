@@ -1,7 +1,7 @@
 #!/bin/bash
 # Contributor: Flobul <flobul.jeedom@gmail.com>
 
-SCRIPT_VERSION='0.19'
+SCRIPT_VERSION='0.20'
 if [ -e  /etc/synoinfo.conf ]; then
   arch=`uname -m`;
   pwd=`pwd`;
@@ -52,7 +52,7 @@ function main ()
       url="https://www.hdsentinel.com/hdslin/hdsentinel-019b.gz";
     elif [ "$bits" -eq "64" ]
     then
-      url="https://www.hdsentinel.com/hdslin/hdsentinel-020b-x64.zip";
+      url="https://www.hdsentinel.com/hdslin/hdsentinel-020c-x64.zip";
     fi
   fi
   extension="${url##*.}";

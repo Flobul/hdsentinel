@@ -17,19 +17,10 @@
  */
 
 require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
-if (!class_exists('ComposerAutoloaderInitHDSentinel')) {
-    require_once dirname(__FILE__) . '/../../vendor/autoload.php';
-}
-
-use phpseclib3\Net\SSH2;
-use phpseclib3\Net\SFTP;
-use phpseclib3\Crypt\PublicKeyLoader;
-
-define('NET_SSH2_LOGGING', 2);
 
 class hdsentinel extends eqLogic
 {
-    public static $_hdsentinelVersion = '0.92';
+    public static $_hdsentinelVersion = '0.94';
     public static $_widgetPossibility = array('custom' => true);
 
     public static function getApiXmlResult($_xml, $_ip)
@@ -62,9 +53,14 @@ class hdsentinel extends eqLogic
             $eqLogic = new hdsentinel();
             $eqLogic->setEqType_name(__CLASS__);
             $eqLogic->setIsEnable(1);
+        } else {
+            $name = $eqLogic->getName();
         }
         log::add(__CLASS__, 'debug', 'Début a2o' .print_r($array,true));
         utils::a2o($eqLogic, $array);
+        if (is_object($eqLogic)) {
+            $eqLogic->setName($name);
+        }
         log::add(__CLASS__, 'debug', 'Fin a2o');
 
         try {
@@ -183,6 +179,15 @@ class hdsentinel extends eqLogic
         return $datetime->format('Y-m-d H:i:s');
     }
 
+    public function decrypt() {
+        $this->setConfiguration('password', utils::decrypt($this->getConfiguration('password')));
+    }
+
+    public function encrypt() {
+        $this->setConfiguration('password', utils::encrypt($this->getConfiguration('password')));
+    }
+
+  
     public static function cronHourly()
     {
         /**
@@ -193,6 +198,7 @@ class hdsentinel extends eqLogic
          * @return			|*Cette fonction ne retourne pas de valeur*|
          */
         foreach (eqLogic::byType(__CLASS__) as $eqLogic) {
+            if (!$eqLogic->getIsEnable()) continue;
             if ($eqLogic->getConfiguration('windows', false)) {
 
                 $url = 'http://'.$eqLogic->getConfiguration('addressip').':'. $eqLogic->getConfiguration('portssh').'/xml';
@@ -215,6 +221,8 @@ class hdsentinel extends eqLogic
                 }
 
             } else {
+                
+              //$this->getConfiguration('autorefresh', '03 00 * * *')
                 /*if ($eqLogic->getConfiguration('remoteDaemonAuto', '0') == 1) {
                     log::add(__CLASS__, 'info', 'Redémarrage cron remote ' . $eqLogic->getName());
                     $eqLogic->launchCron($eqLogic->getId());
@@ -235,7 +243,9 @@ class hdsentinel extends eqLogic
          */
         $return = null;
         foreach (eqLogic::byType(__CLASS__) as $eqLogic) {
-            if ($eqLogic->getLogicalId() == $_logicalId || $eqLogic->getConfiguration('addressip') == $_ip) {
+            $sshmanager = eqLogic::byId($eqLogic->getConfiguration('host_id'));
+            if (is_object($sshmanager)
+                && ($eqLogic->getLogicalId() == $_logicalId || $sshmanager->getConfiguration(sshmanager::CONFIG_HOST) == $_ip)) {
                 $return = $eqLogic;
                 break;
             }
@@ -308,48 +318,102 @@ class hdsentinel extends eqLogic
         return false;
     }
   
-	public function decrypt() {
-		$this->setConfiguration('user', utils::decrypt($this->getConfiguration('user')));
-		$this->setConfiguration('password', utils::decrypt($this->getConfiguration('password')));
-		$this->setConfiguration('ssh-key', utils::decrypt($this->getConfiguration('ssh-key')));
-		$this->setConfiguration('ssh-passphrase', utils::decrypt($this->getConfiguration('ssh-passphrase')));
-	}
-	
-	public function encrypt() {
-		$this->setConfiguration('user', utils::encrypt($this->getConfiguration('user')));
-		$this->setConfiguration('password', utils::encrypt($this->getConfiguration('password')));
-		$this->setConfiguration('ssh-key', utils::encrypt($this->getConfiguration('ssh-key')));
-		$this->setConfiguration('ssh-passphrase', utils::encrypt($this->getConfiguration('ssh-passphrase')));
-	}
-
-    public function preSave()
+  
+    public function postSave()
     {
-        if ($this->getConfiguration('manually', false)) {
-            $cmdRefresh = $this->getCmd('action', 'refresh');
-            if (!is_object($cmdRefresh)) {
-                log::add(__CLASS__, 'debug', 'Créaction de la commande Rafraîchir');
-                $cmdRefresh = new hdsentinelCmd();
-                $cmdRefresh->setLogicalId('refresh');
-                $cmdRefresh->setEqLogic_id($this->getId());
-                $cmdRefresh->setName(__('Rafraîchir',__FILE__));
-                $cmdRefresh->setIsVisible(true);
-                $cmdRefresh->setType('action');
-                $cmdRefresh->setSubType('other');
-                $cmdRefresh->setGeneric_type('DONT');
-                $cmdRefresh->save();
+        $cmdRefresh = $this->getCmd('action', 'refresh');
+        if (!is_object($cmdRefresh)) {
+            log::add(__CLASS__, 'debug', 'Créaction de la commande Rafraîchir');
+            $cmdRefresh = new hdsentinelCmd();
+            $cmdRefresh->setLogicalId('refresh');
+            $cmdRefresh->setEqLogic_id($this->getId());
+            $cmdRefresh->setName(__('Rafraîchir',__FILE__));
+            $cmdRefresh->setIsVisible(true);
+            $cmdRefresh->setType('action');
+            $cmdRefresh->setSubType('other');
+            $cmdRefresh->setGeneric_type('DONT');
+            $cmdRefresh->save();
+        }
+        if (trim($this->getConfiguration('autorefresh')) != '') {
+            log::add(__CLASS__, 'debug', $this->getName() . ' cronEqLogic (AutoRefresh) :: ' . $this->getConfiguration('autorefresh'));
+
+            $cron = cron::byClassAndFunction(__CLASS__, 'cronEqLogic', array('HDSentinel_id' => intval($this->getId())));
+            if (!is_object($cron)) {
+                $cron = new cron();
+                $cron->setClass(__CLASS__);
+                $cron->setFunction('cronEqLogic');
+                $cron->setOption(array('HDSentinel_id' => intval($this->getId())));
+                $cron->setDeamon(0);
             }
+            if ($this->getIsEnable()) {
+                $cron->setEnable(1);
+            } else {
+                $cron->setEnable(0);
+            }
+
+            $_cronPattern = $this->getConfiguration('autorefresh');
+            $cron->setSchedule($_cronPattern);
+
+            if ($_cronPattern == '* * * * *') {
+                $cron->setTimeout(1);
+                log::add(__CLASS__, 'debug', $this->getName() . ' cronEqLogic Timeout 1min');
+            } else {
+                $_ExpMatch = array();
+                $_ExpResult = preg_match('/^([0-9,]+|\*)\/([0-9]+)/', $_cronPattern, $_ExpMatch);
+                if ($_ExpResult === 1) {
+                    $cron->setTimeout(intval($_ExpMatch[2]));
+                    log::add(__CLASS__, 'debug', $this->getName() . ' cronEqLogic Timeout '. $_ExpMatch[2] .'min');
+                } else {
+                    $cron->setTimeout(15);
+                    log::add(__CLASS__, 'debug', $this->getName() . ' cronEqLogic Timeout Default 15min');
+                }
+            }
+            $cron->save();
+        } else {
+            $cron = cron::byClassAndFunction(__CLASS__, 'cronEqLogic', array('HDSentinel_id' => intval($this->getId())));
+            if (is_object($cron)) {
+                $cron->remove();
+                log::add(__CLASS__, 'debug', $this->getName() . ' Remove cronEqLogic');
+            }
+        }
+    }
+
+    public static function cronEqLogic($_options) {
+        $eqLogic = eqLogic::byId($_options['HDSentinel_id']);
+        if (is_object($eqLogic)) {
+            try {
+                $eqLogic->refresh();
+            } catch (Exception $exc) {
+                log::add(__CLASS__, 'debug', $eqLogic->getName() . ' cronEqLogic Exception ' . $exc->getMessage());
+            }
+        }
+    }
+
+    public function preRemove() {
+        $cron = cron::byClassAndFunction(__CLASS__, 'cronEqLogic', array('HDSentinel_id' => intval($this->getId())));
+        if (is_object($cron)) {
+            $cron->remove();
         }
     }
 
     public function getHtmlDisksFullResult()
     {
+        if ($this->getConfiguration('windows', false)) {
+            return false;
+        }
+        $sshmanager = eqLogic::byId($this->getConfiguration('host_id'));
+        if (!is_object($sshmanager)) {
+            return false;
+        }
+        $user = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME));
+
         $plugin = plugin::byId(__CLASS__);
         $cmd = $this->getSudoCmd();
-        $cmd .='bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+        $cmd .='bash /home/' . $user . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
         $cmd .= ' -o html';
-        return $this->sendSshCmd([$cmd]);
+        return $this->executeCmds($cmd);
     }
 
     public function createCmdsFromConfig($_cmd, $_diskNb)
@@ -464,21 +528,30 @@ class hdsentinel extends eqLogic
         $return = false;
         //$cmd1 = $this->getSudoCmd() . 'touch /etc/cron.daily/hdsentinel; echo $?';
         //$cmd2 = $this->getSudoCmd();
-        $cmd2 = '';
-        if ($this->getConfiguration('user') != 'root') {
-            $cmd2 .= 'echo ' . $this->getConfiguration('password') . ' | su -c \'';
+        if ($this->getConfiguration('windows', false)) {
+            return false;
         }
-        $cmd2 .= 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+        $sshmanager = eqLogic::byId($this->getConfiguration('host_id'));
+        if (!is_object($sshmanager)) {
+            return false;
+        }
+        $user = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME));
+        $cmd2 = '';
+        if ($user != 'root') {
+            $cmd2 .= 'echo ' . $user . ' | su -c \'';
+        }
+        $cmd2 .= 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' bash /home/' . $user . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
         $cmd2 .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd2 .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
         $cmd2 .= ' -o xml';
         $cmd2 .= ' >> /tmp/hdsentinel_log 2>&1 &"';
         $cmd2 .= ' > /etc/cron.daily/hdsentinel; echo $?;';
-        if ($this->getConfiguration('user') != 'root') {
+        if ($user != 'root') {
             $cmd2 .= '\'';
         }
-        $return = $this->sendSshCmd([$cmd2]);
-        $cmdLog = str_replace($this->getConfiguration('password'),'PASSWORD',$cmd2);
+        $return = $this->executeCmds($cmd2);
+
+        $cmdLog = str_replace(utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME)),'PASSWORD',$cmd2);
         $cmdLog = str_replace(jeedom::getApiKey($plugin->getId()),'APIKEY',$cmdLog);
         log::add(__CLASS__, 'info', __('Fin création du cron distant cmd1: ', __FILE__) . ' + cmd: ' . $cmdLog . ' = ' . $return);
         return $return;
@@ -493,8 +566,11 @@ class hdsentinel extends eqLogic
          * @return			$return			string		Commande pour élever les privilèges de la commande à envoyer
          */
         $cmd = '';
-        if ($this->getConfiguration('user') != 'root') {
-            $cmd .= 'echo "' . $this->getConfiguration('password') . '" | sudo -S ';
+        $sshmanager = eqLogic::byId($this->getConfiguration('host_id'));
+        if (is_object($sshmanager)) {
+            if (utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME)) != 'root') {
+                $cmd .= 'echo "' . utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME)) . '" | sudo -S ';
+            }
         }
         return $cmd;
     }
@@ -508,34 +584,42 @@ class hdsentinel extends eqLogic
          * @return			$return			string		Retour de la commande
          */
         log::add(__CLASS__, 'info', __('Début lancement du cron distant', __FILE__));
+        if ($this->getConfiguration('windows', false)) {
+            return false;
+        }
+        $sshmanager = eqLogic::byId($this->getConfiguration('host_id'));
+        if (!is_object($sshmanager)) {
+            return false;
+        }
+        $user = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME));
 
         $plugin = plugin::byId(__CLASS__);
-        if (!$this->sendSshCmd(['ls /etc/cron.daily/hdsentinel | wc -l'])) {
-            $this->sendSshCmd([ $this->getSudoCmd() . 'mkdir -p /etc/cron.daily/;']);
+        if (!$this->executeCmds('ls /etc/cron.daily/hdsentinel | wc -l')) {
+
+            $this->executeCmds($this->getSudoCmd() . 'mkdir -p /etc/cron.daily/;');
             log::add(__CLASS__, 'info', __('Création du cron distant ', __FILE__));
 
-            if ($this->sendSshCmd(['ls /etc/synoinfo.conf | wc -l'])) {
+            if ($this->executeCmds('ls /etc/synoinfo.conf | wc -l')) {
                 log::add(__CLASS__, 'info', __('Création du cron distant pour synology ', __FILE__));
-                //$cmd = $this->getSudoCmd() . 'echo "* * * * * echo fuzuri | sudo -S  bash /home/'.$this->getConfiguration('user').'/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh -a APIKEY -i 192.168.0.29 -o xml >> /tmp/hdsentinel_log 2>&1 &" > /tmp/hdsentinel_cron';
-                $cmd2 .= $this->getSudoCmd() . 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+                $cmd2 .= $this->getSudoCmd() . 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' bash /home/' . $user . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
                 $cmd2 .= ' -a ' . jeedom::getApiKey($plugin->getId());
                 $cmd2 .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
                 $cmd2 .= ' -o xml';
                 $cmd2 .= ' >> /tmp/hdsentinel_log 2>&1 &"';
-                $cmd2 .= ' > /tmp/hdsentinel_cron; '.$this->getSudoCmd().'mv /tmp/hdsentinel_cron /etc/cron.daily/hdsentinel; echo $?;';
+                $cmd2 .= ' > /tmp/hdsentinel_cron; ' . $this->getSudoCmd() . 'mv /tmp/hdsentinel_cron /etc/cron.daily/hdsentinel; echo $?;';
 
-                $this->sendSshCmd([$cmd2]);
+                $this->executeCmds($cmd2);
             } else {
                 $this->createCron();
             }
         }
         $cmd3 = '[ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l) || (' . $this->getSudoCmd() . '/usr/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l)';
 
-        if (!$this->sendSshCmd([$cmd3])) {
+        if (!$this->executeCmds($cmd3)) {
             log::add(__CLASS__, 'info', __('Lancement du cron distant', __FILE__));
             $cmd = '([ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab /etc/cron.daily/hdsentinel) && echo $?) || ';
             $cmd .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab /etc/cron.daily/hdsentinel) && echo $?)';
-            return $this->sendSshCmd([$cmd]);
+            return $this->executeCmds($cmd);
         }
         return false;
     }
@@ -549,10 +633,13 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Suppression du cron distant', __FILE__));
+        if ($this->getConfiguration('windows', false)) {
+            return false;
+        }
         $cmd1 = '[ -f "/opt/bin/crontab" ] && ((' . $this->getSudoCmd() . '/opt/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /opt/bin/crontab -); echo $?) || ';
         $cmd1 .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /usr/bin/crontab -); echo $?)';
         $cmd2 = $this->getSudoCmd() . "rm /etc/cron.daily/hdsentinel; echo $?;";
-        return $this->sendSshCmd([$cmd1,$cmd2]);
+        return $this->executeCmds([$cmd1,$cmd2]);
     }
 
     public function stopCron()
@@ -564,9 +651,12 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Arrêt du cron distant', __FILE__));
+        if ($this->getConfiguration('windows', false)) {
+            return false;
+        }
         $cmd = '[ -f "/opt/bin/crontab" ] && ((' . $this->getSudoCmd() . '/opt/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /opt/bin/crontab -); echo $?) || ';
         $cmd .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /usr/bin/crontab -); echo $?)';
-        return $this->sendSshCmd([$cmd]);
+        return $this->executeCmds($cmd);
     }
 
 
@@ -579,9 +669,13 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Statut du cron distant', __FILE__));
+        if ($this->getConfiguration('windows', false)) {
+            return false;
+        }
         $cmd = '([ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab -u root -l | grep hdsentinel_to_jeedom_pub | wc -l)) || ';
         $cmd .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab -u root -l | grep hdsentinel_to_jeedom_pub | wc -l))';
-        return $this->sendSshCmd([$cmd]);
+        log::add(__CLASS__, 'info', __('Statut du cron distant', __FILE__) . $cmd);
+        return $this->executeCmds($cmd);
     }
 
     public function installDependancy()
@@ -593,12 +687,35 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Installation des dépendances', __FILE__));
+        if ($this->getConfiguration('windows', false)) {
+            return false;
+        }
+        $sshmanager = eqLogic::byId($this->getConfiguration('host_id'));
+        if (!is_object($sshmanager)) {
+            return false;
+        }
+        $user = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME));
+
         $cmd = $this->getSudoCmd();
-        $cmd .= 'bash /home/'.$this->getConfiguration('user').'/hdsentinel/ressources/install_apt.sh  >> ' . '/tmp/hdsentinel_dependancy' . ' 2>&1 &';
-        return $this->sendSshCmd([$cmd]);
+        $cmd .= 'bash /home/' . $user . '/hdsentinel/ressources/install_apt.sh  >> ' . '/tmp/hdsentinel_dependancy' . ' 2>&1 &';
+        return $this->executeCmds($cmd);
     }
 
-    public function getLogDependancy($_dependancy='')
+    public function executeCmds($_cmd) {
+      
+        try {
+            $result = sshmanager::executeCmds($this->getConfiguration('host_id'), $_cmd);
+        } catch (RuntimeException $ex) {
+            log::add(__CLASS__, 'debug', $this->getName() . __(' Erreur Runtime du cron distant', __FILE__) . $ex->getMessage());
+            $result = false;
+        } catch (Throwable $th) {
+            log::add(__CLASS__, 'debug', $this->getName() . __(' Erreur générale du cron distant', __FILE__) . $th->getMessage());
+            $result = false;
+        }
+        return $result;
+    }
+  
+    public function getLogDependancy($_dependancy = '')
     {
         /**
          * Récupère le log d'installation des dépendances sur l'appareil distant
@@ -606,19 +723,22 @@ class hdsentinel extends eqLogic
          * @param			$_dependancy     string       Pour attriber un nom au log
          * @return			                 bool         Retour de la commande
          */
+        if ($this->getConfiguration('windows', false)) {
+            return false;
+        }
         $name = $this->getName();
         $local = dirname(__FILE__) . '/../../../../log/hdsentinel_'.str_replace(' ', '-', $name).$_dependancy;
         log::add(__CLASS__, 'info', __('Suppression de la log ', __FILE__) . $local);
         exec('rm -f '. $local);
         log::add(__CLASS__, 'info', __('Récupération de la log distante', __FILE__));
-        if ($this->getFiles($local, '/tmp/hdsentinel_dependancy'.$_dependancy)) {
-            $this->sendSshCmd(['cat /dev/null > /tmp/hdsentinel_dependancy'.$_dependancy]);
+        if (sshmanager::getFile($this->getConfiguration('host_id'), $local, '/tmp/hdsentinel_dependancy'.$_dependancy)) {
+            $this->executeCmds('cat /dev/null > /tmp/hdsentinel_dependancy'.$_dependancy);
             return true;
         }
         return false;
     }
 
-    public function getLog($_dependancy='')
+    public function getLog($_dependancy = '')
     {
         /**
          * Récupère le log du cron sur l'appareil distant
@@ -626,13 +746,16 @@ class hdsentinel extends eqLogic
          * @param			$_dependancy     string       Pour attriber un nom au log
          * @return			                 bool         Retour de la commande
          */
+        if ($this->getConfiguration('windows', false)) {
+            return false;
+        }
         $name = $this->getName();
         $local = dirname(__FILE__) . '/../../../../log/hdsentinel_log_'.str_replace(' ', '-', $name).$_dependancy;
         log::add(__CLASS__, 'info', __('Suppression de la log ', __FILE__) . $local);
         exec('rm -f '. $local);
         log::add(__CLASS__, 'info', __('Récupération de la log distante', __FILE__));
-        if ($this->getFiles($local, '/tmp/hdsentinel_log'.$_dependancy)) {
-            $this->sendSshCmd(['cat /dev/null > /tmp/hdsentinel_log'.$_dependancy]);
+        if (sshmanager::getFile($this->getConfiguration('host_id'), $local, '/tmp/hdsentinel_log'.$_dependancy)) {
+            $this->executeCmds('cat /dev/null > /tmp/hdsentinel_log'.$_dependancy);
             return true;
         }
         return false;
@@ -648,177 +771,30 @@ class hdsentinel extends eqLogic
          */
         $result = array();
         $cmd = $this->getSudoCmd();
-        $user = $this->getConfiguration('user');
+        $sshmanager = eqLogic::byId($this->getConfiguration('host_id'));
+        if (!is_object($sshmanager)) {
+            return false;
+        }
+        $user = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME));
+
         log::add(__CLASS__, 'debug', __('Envoi de fichier ', __FILE__) . $this->getName());
         $script_path = dirname(__FILE__) . '/../../ressources/';
 		exec('tar -zcvf /tmp/folder-hdsentinel.tar.gz ' . $script_path);
 
         log::add(__CLASS__, 'info', __('Création du dossier des scripts', __FILE__));
-		$result['dir'] = $this->sendSshCmd([$cmd.'rm -Rf /home/'.$user.'/hdsentinel',$cmd.'mkdir -p /home/'.$user.'/hdsentinel;echo $?']);
+        $result['dir'] = $this->executeCmds($cmd.'rm -Rf /home/'.$user.'/hdsentinel',$cmd.'mkdir -p /home/'.$user.'/hdsentinel;echo $?');
         log::add(__CLASS__, 'info', 'Envoi du fichier /tmp/folder-hdsentinel.tar.gz');
 
-		if ($this->sendSshFiles('/tmp/folder-hdsentinel.tar.gz','/home/'.$user.'/folder-hdsentinel.tar.gz')) {
+        if (sshmanager::sendFile($this->getConfiguration('host_id'), '/tmp/folder-hdsentinel.tar.gz','/home/'.$user.'/folder-hdsentinel.tar.gz')) {
 			log::add(__CLASS__,'info',__('Décompression du dossier distant',__FILE__));
-			$result['uncompress'] = $this->sendSshCmd([$cmd . 'tar -zxf /home/'.$user.'/folder-hdsentinel.tar.gz -C /home/'.$user.'/hdsentinel;echo $?;',$cmd.'rm -f /home/'.$user.'/folder-hdsentinel.tar.gz;echo $?;']);
-            $result['install'] = $this->sendSshCmd(['ls /home/'.$user.'/hdsentinel/ressources/install_apt.sh | wc -l']);
-            $result['publish'] = $this->sendSshCmd(['ls /home/'.$user.'/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh | wc -l']);
+            $result['uncompress'] = $this->executeCmds($cmd . 'tar -zxf /home/'.$user.'/folder-hdsentinel.tar.gz -C /home/'.$user.'/hdsentinel;echo $?;',$cmd.'rm -f /home/'.$user.'/folder-hdsentinel.tar.gz;echo $?;');
+            $result['install'] = $this->executeCmds('ls /home/'.$user.'/hdsentinel/ressources/install_apt.sh | wc -l');
+            $result['publish'] = $this->executeCmds('ls /home/'.$user.'/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh | wc -l');
         }
 
         log::add(__CLASS__, 'info', __('Suppression des anciens log', __FILE__));
-        $result['removeLog'] = $this->sendSshCmd([$cmd . 'rm /tmp/hdsentinel_*']);
-
+        $result['removeLog'] = $this->executeCmds($cmd . 'rm /tmp/hdsentinel_*');
         return $result;
-    }
-  
-    public function getFiles($_local, $_target)
-    {
-        /**
-         *
-         * Récupère un fichier à un emplacement donné
-         *
-         * @param			$_local        string        Emplacement distant
-         * @param			$_target       string        Emplacement local
-         * @return			               bool          Vrai
-         */
-      
-        $sftp = new SFTP($this->getConfiguration('addressip'), $this->getConfiguration('portssh'));
-        if ($this->getConfiguration('maitreesclave') == 'deporte-key') {
-            try {
-                $password = PublicKeyLoader::load($this->getConfiguration('ssh-key'), $this->getConfiguration('ssh-passphrase'));
-                log::add('Monitoring', 'debug', '[SSH-CMD] PublicKeyLoader :: '. $equipement .' :: OK');
-            } catch (Exception $e) {
-                log::add('Monitoring', 'error', '[SSH-CMD] PublicKeyLoader :: '. $equipement .' :: '. $e->getMessage());
-                $password = '';
-            }
-        } else {
-           $password = $this->getConfiguration('password');
-        }
-        if (!$sftp->login($this->getConfiguration('user'), $password)) {
-            log::add(__CLASS__, 'debug', __('Authentification SSH KO pour ', __FILE__) . $this->getName());
-            return false;
-        }
-
-        try {
-		    if ($sftp->get($_target, $_local, SFTP::SOURCE_LOCAL_FILE) === false) {
-                log::add(__CLASS__, 'debug', __('Erreur de réception du fichier de ', __FILE__) . $_local . ' à ' . $_target  );
-			    $sftp->disconnect();
-                return false;
-            } else {
-			    $sftp->disconnect();
-                log::add(__CLASS__, 'info', __('Fichier récupéré avec succès sur ', __FILE__) . $this->getConfiguration('addressip'));
-            }
-        } catch (\Exception $e) {
-            log::add(__CLASS__, 'debug', __('Erreur de réception du fichier de ', __FILE__) . $_local . ' à ' . $_target . ' => ' . json_encode(utils::o2a($e)));
-        }
-
-        if (trim($output) != '') {
-            log::add(__CLASS__, 'debug', $output);
-        }
-
-        return true;
-    }
-
-    public function sendSshFiles($_local, $_target)
-    {
-        /**
-         * Envoie un fichier à un emplacement donné
-         *
-         * @param			$_local        string        Emplacement distant
-         * @param			$_target       string        Emplacement local
-         * @return			               bool          Vrai
-         */
-      
-        $sftp = new SFTP($this->getConfiguration('addressip'), $this->getConfiguration('portssh'));
-        if ($this->getConfiguration('maitreesclave') == 'deporte-key') {
-            try {
-                $password = PublicKeyLoader::load($this->getConfiguration('ssh-key'), $this->getConfiguration('ssh-passphrase'));
-                log::add('Monitoring', 'debug', '[SSH-CMD] PublicKeyLoader :: '. $equipement .' :: OK');
-            } catch (Exception $e) {
-                log::add('Monitoring', 'error', '[SSH-CMD] PublicKeyLoader :: '. $equipement .' :: '. $e->getMessage());
-                $password = '';
-            }
-        } else {
-           $password = $this->getConfiguration('password');
-        }
-
-        if (!$sftp->login($this->getConfiguration('user'), $password)) {
-            log::add(__CLASS__, 'debug', __('Authentification SSH KO pour ', __FILE__) . $this->getName());
-            return false;
-        }
-
-        try {
-		    if ($sftp->put($_target, $_local, SFTP::SOURCE_LOCAL_FILE) === false) {
-                log::add(__CLASS__, 'debug', __('Erreur d\'envoi du fichier de ', __FILE__) . $_local . ' à ' . $_target  );
-			    $sftp->disconnect();
-                return false;
-            } else {
-			    $sftp->disconnect();
-                log::add(__CLASS__, 'info', __('Fichier envoyé avec succès sur ', __FILE__) . $this->getConfiguration('addressip'));
-            }
-        } catch (\Exception $e) {
-            log::add(__CLASS__, 'debug', __('Erreur d\'envoi du fichier de ', __FILE__) . $_local . ' à ' . $_target . ' => ' . json_encode(utils::o2a($e)));
-        }
-
-        if (trim($output) != '') {
-            log::add(__CLASS__, 'debug', $output);
-        }
-
-        return true;
-    }
-
-    public function sendSshCmd($_cmd)
-    {
-        /**
-         * Envoie de commandes à l'appareil distant
-         *
-         * @param			$_cmd        array       Tableau des commandes à envoyer
-         * @return			             string      Retour de la commande
-         */
-		$equipement = $this->getName();
-		$cnx_ssh = '';
-        $plugin = plugin::byId(__CLASS__);
-        $connection = new SSH2($this->getConfiguration('addressip'), $this->getConfiguration('portssh'));
-
-        if ($cnx_ssh != 'KO') {
-            if ($this->getConfiguration('maitreesclave') == 'deporte-key') {
-                try {
-                    $password = PublicKeyLoader::load($this->getConfiguration('ssh-key'), $this->getConfiguration('ssh-passphrase'));
-                    log::add('Monitoring', 'debug', '[SSH-CMD] PublicKeyLoader :: '. $equipement .' :: OK');
-                } catch (Exception $e) {
-                    log::add('Monitoring', 'error', '[SSH-CMD] PublicKeyLoader :: '. $equipement .' :: '. $e->getMessage());
-                    $password = '';
-                }
-            } else {
-               $password = $this->getConfiguration('password');
-            }
-            try {
-                if (!$connection->login($this->getConfiguration('user'), $password)) {
-                    log::add(__CLASS__, 'error', '[SSH-CMD] Login ERROR :: '. $equipement . ' :: ' . $user);
-                    $cnx_ssh = 'KO';
-                }
-            } catch (Exception $e) {
-                log::add(__CLASS__, 'error', '[SSH-CMD] Authentification SSH :: '. $equipement .' :: '. $e->getMessage());
-                $cnx_ssh = 'KO';
-            }
-            foreach ($_cmd as $cmd) {
-                $cmdLog = str_replace($this->getConfiguration('password'),'PASSWORD',$cmd);
-                $cmdLog = str_replace(jeedom::getApiKey($plugin->getId()),'APIKEY',$cmdLog);
-                log::add(__CLASS__, 'info', __('Commande par SSH2 ', __FILE__) . $cmdLog .  __(' sur ', __FILE__) . $this->getConfiguration('addressip'));
-                $execmd = $cmd;
-		        try {
-                    $result = $connection->exec($execmd);
-                    log::add(__CLASS__, 'debug', '[SSH-CMD] Resultat :: '. $equipement .' :: ' . $result);
-                } catch (Exception $e) {
-                    $result = '';
-                    log::add(__CLASS__, 'error', '[SSH-CMD] Resultat Exception :: '. $equipement .' :: ' . $e->getMessage());
-                    log::add(__CLASS__, 'debug', '[SSH-CMD] Resultat Exception Log :: '. $equipement .' :: ' . $connection->getLog());
-                }
-                log::add(__CLASS__, 'info', __('Sortie commande par SSH2 ', __FILE__) . $output .  __(' sur ', __FILE__) . $this->getConfiguration('addressip'));
-            }
-            $connection->disconnect();
-            return trim($result);
-        }
-        return false;
     }
 
     public function test()
@@ -829,16 +805,25 @@ class hdsentinel extends eqLogic
          * @param			|*Cette fonction ne retourne pas de valeur*|
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
-        log::add(__CLASS__, 'info', __('Test de la commande', __FILE__));
-        $plugin = plugin::byId(__CLASS__);
-        $cmd = $this->getSudoCmd();
-        $cmd .= 'bash /home/' . $this->getConfiguration('user') . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
-        $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
-        $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
-        $cmd .= ' -o xml';
-        //$cmd .= ' >> /tmp/hdsentinel_log 2>&1 &"';
-        $return = $this->sendSshCmd([$cmd]);
-        log::add(__CLASS__, 'info', __('Test de la commande - résultat : ', __FILE__) . $return);
+        $return = false;
+      
+        if ($this->getConfiguration('windows', false)) {
+            return false;
+        }
+        $sshmanager = eqLogic::byId($this->getConfiguration('host_id'));
+        if (is_object($sshmanager)) {
+
+            log::add(__CLASS__, 'info', __('Test de la commande', __FILE__));
+            $plugin = plugin::byId(__CLASS__);
+            $cmd = $this->getSudoCmd();
+            $cmd .= 'bash /home/' . utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME)) . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+            $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
+            $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
+            $cmd .= ' -o xml';
+            //$cmd .= ' >> /tmp/hdsentinel_log 2>&1 &"';
+            $return = $this->executeCmds($cmd);
+        }
+        log::add(__CLASS__, 'info', __('Test de la commande : ', __FILE__) . $cmd. __(', résultat : ', __FILE__) . $return);
         return $return;
     }
 
@@ -851,7 +836,9 @@ class hdsentinel extends eqLogic
          *       			|*Cette fonction ne retourne pas de valeur*|
          */
         log::add(__CLASS__, 'info', __('Refresh commande', __FILE__));
-
+        if ($this->getConfiguration('windows', false)) {
+            return false;
+        }
         $cmd = "HDSENTINEL=$(which hdsentinel);
         if [ -f '/usr/local/bin/hdsentinel' ];
           then HDSENTINEL='/usr/local/bin/hdsentinel';
@@ -868,12 +855,16 @@ class hdsentinel extends eqLogic
         fi; ";
         $cmd .= $this->getSudoCmd();
         $cmd .= '$HDSENTINEL -dump -xml $DISK';
-        $return = $this->sendSshCmd([$cmd]);
+        $return = $this->executeCmds($cmd);
 
         try {
             $xml_action = new SimpleXMLElement($return);
             $result = json_decode(json_encode($xml_action), true);
-            self::getApiXmlResult($result, $this->getConfiguration('addressip'));
+          
+            $sshmanager = eqLogic::byId($this->getConfiguration('host_id'));
+            if (is_object($sshmanager)) {
+                self::getApiXmlResult($result, $sshmanager->getConfiguration(sshmanager::CONFIG_HOST));
+            }
         } catch (Exception $e) {
             log::add(__CLASS__, 'info', __('Erreur XML', __FILE__));
         }
@@ -882,6 +873,9 @@ class hdsentinel extends eqLogic
 
     public function getHtmlDisksFullResultManually()
     {
+        if ($this->getConfiguration('windows', false)) {
+            return false;
+        }
         $cmd = "HDSENTINEL=$(which hdsentinel);
         if [ -f '/usr/local/bin/hdsentinel' ];
           then HDSENTINEL='/usr/local/bin/hdsentinel';
@@ -894,7 +888,7 @@ class hdsentinel extends eqLogic
         fi; ";
         $cmd .= $this->getSudoCmd();
         $cmd .= '$HDSENTINEL -html -r /tmp/hdsentinel.html >/dev/null 2>&1 && cat /tmp/hdsentinel.html';
-        return $this->sendSshCmd([$cmd]);
+        return $this->executeCmds($cmd);
     }
 }
 

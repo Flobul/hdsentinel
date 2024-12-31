@@ -306,59 +306,63 @@ $('.hdsentinelAction[data-action=test]').on('click', function () {
 
 $('#windows').off('click').on('click', function() {
   if($('#windows').prop("checked")) {
-    $('.underLinux').hide();
+    $('.windows').show();
+    $('.sshHosts').hide(); 
+    $('.manually').hide();
+    $('.automatically').show();
   } else {
-    $('.underLinux').show();
+    $('.sshHosts').show(); 
+    $('.windows').hide();
+    if($('#manually').prop("checked")) {
+      $('.manually').hide();
+      $('.automatically').show();
+    } else {
+      $('.manually').show();
+      $('.automatically').hide();
+      $('.windows').hide();
+    }
   }
 });
 
 $('#manually').off('click').on('click', function() {
-  if($('#manually').prop("checked")) {
+  if($('#windows').prop("checked")) {
+    $('.windows').show();
     $('.manually').hide();
     $('.automatically').show();
-    if($('#windows').prop("checked")) {
-      $('.underLinux').hide();
-    } else {
-      $('.underLinux').show();
-    }
   } else {
-    $('.manually').show();
-    $('.automatically').hide();
-    $('.underLinux').show();
+    $('.windows').hide();
+    if($('#manually').prop("checked")) {
+      $('.manually').hide();
+      $('.automatically').show();
+    } else {
+      $('.manually').show();
+      $('.automatically').hide();
+      $('.windows').hide();
+    }
   }
-});
-
-$(".eqLogicAttr[data-l2key='maitreesclave']").on('change', function () {
-	if (this.selectedIndex == 0) {
-	  $(".distant").show();
-	  $(".distant-password").show();
-	  $(".distant-key").hide();
-	} else if (this.selectedIndex == 1) {
-		$(".distant").show();
-		$(".distant-password").hide();
-		$(".distant-key").show();
-	} else {
-		$(".distant").hide();
-	}
 });
 
 function printEqLogic(_eqLogic) {
 
+  buildSelectHost(_eqLogic.configuration.host_id);
   $('#table_infoseqlogic tbody').empty();
 
-  if(_eqLogic.configuration.manually && _eqLogic.configuration.manually == 1) {
+  if(_eqLogic.configuration.windows && _eqLogic.configuration.windows == 1) {
+    $('.windows').show();
+    $('.sshHosts').hide(); 
     $('.manually').hide();
     $('.automatically').show();
-    if(_eqLogic.configuration.windows && _eqLogic.configuration.windows == 1) {
-      $('.underLinux').hide();
-    } else {
-      $('.underLinux').show();
-    }
   } else {
-    $('.manually').show();
-    $('.automatically').hide();
+    $('.sshHosts').show(); 
+    $('.windows').hide();
+    if(_eqLogic.configuration.manually && _eqLogic.configuration.manually == 1) {
+      $('.manually').hide();
+      $('.automatically').show();
+    } else {
+      $('.manually').show();
+      $('.automatically').hide();
+    }
   }
-
   //affichage des configurations du device
   printEqLogicHelper("{{Version de HDSentinel installée}}", "Installed_version", _eqLogic);
   printEqLogicHelper("{{Adresse MAC}}", "MAC_Address", _eqLogic);
@@ -369,10 +373,7 @@ function printEqLogic(_eqLogic) {
   printEqLogicHelper("{{Démarré depuis}}", "Uptime", _eqLogic);
   printEqLogicHelper("{{Démarré depuis}}", "System_Uptime", _eqLogic);
 
-  if ($('.eqLogicAttr[data-l1key=configuration][data-l2key=addressip]').value() == ''
-      || $('.eqLogicAttr[data-l1key=configuration][data-l2key=portssh]').value() == ''
-      || $('.eqLogicAttr[data-l1key=configuration][data-l2key=user]').value() == ''
-      || $('.eqLogicAttr[data-l1key=configuration][data-l2key=password]').value() == '' ) {
+  if (_eqLogic.configuration.host_id == '') {
       $('.hdsentinelAction[data-action=checkremotecron]').removeClass('btn-success').addClass('btn-danger');
       $('.hdsentinelAction[data-action=checkremotecron]').html('<span class="label label-danger btn-sm">NOK</span>');
       return;
@@ -439,6 +440,9 @@ function addCmdToTable(_cmd) {
         tr += '</td>';
 
 		tr += '<td>';
+        if (init(_cmd.type) == 'info') {
+            tr += '<span class="cmdAttr" data-l1key="htmlstate" style="display:block;text-align:center;"></span>';
+        }
         if (init(_cmd.subType) == 'numeric') {
           tr += '    <input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="display:inline-block;width: 75px;"></input>';
           tr += '    <input class="cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="display:inline-block;width: 50px;"></input>';
