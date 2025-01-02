@@ -22,29 +22,34 @@ if (!isConnect('admin')) {
 function updateValue($_cmd) {
     if (is_object($_cmd)) {
         $js = '<script>';
-        $js .= "    jeedom.cmd.update[{$_cmd->getId()}] = function (_options) { ;";
-        $js .= "        var cmd = $('.label[data-cmd_id=".$_cmd->getId()."]');";
-        $js .= "        var unit = cmd.attr('data-unit') || '';";
-        $js .= "        if(unit == '%') {;";
-        $js .= "            var label = 'label label-success';";
-        $js .= "            if(_options.display_value < parseFloat(75)){;";
-        $js .= "                label = 'label label-danger';";
-        $js .= "            } else if(_options.display_value < parseFloat(95)){;";
-        $js .= "                label = 'label label-warning';";
+        $js .= "    jeedom.cmd.addUpdateFunction('{$_cmd->getId()}', function(_options) {";
+        $js .= "        var cmd = document.querySelector('.label[data-cmd_id=\"".$_cmd->getId()."\"]');";
+        $js .= "        var unit = cmd.getAttribute('data-unit') || '';";
+        $js .= "        if(unit == \"%\") {";
+        $js .= "            var label = 'label-success';";
+        $js .= "            if(_options.display_value < parseFloat(75)){";
+        $js .= "                label = 'label-danger';";
+        $js .= "            }else if(_options.display_value < parseFloat(95)){";
+        $js .= "                label = 'label-warning';";
         $js .= "            };";
-        $js .= "            cmd.removeClass('label-success').removeClass('label-warning').removeClass('label-danger').addClass(label);";
-        $js .= "        };";
-        $js .= "        if(unit == '°C') {;";
-        $js .= "            var label = 'label label-success';";
-        $js .= "            if(_options.display_value > parseFloat(60)){;";
-        $js .= "                label = 'label label-danger';";
-        $js .= "            } else if(_options.display_value > parseFloat(50)){;";
-        $js .= "                label = 'label label-warning';";
+        $js .= "            cmd.classList.remove('label-success', 'label-warning');";
+        $js .= "            cmd.classList.add(label);";
+        $js .= "        }else if(unit == \"°C\") {";
+        $js .= "            var label = 'label-success';";
+        $js .= "            if(_options.display_value > parseFloat(60)){";
+        $js .= "                label = 'label-danger';";
+        $js .= "            }else if(_options.display_value > parseFloat(50)){";
+        $js .= "                label = 'label-warning';";
         $js .= "            };";
-        $js .= "            cmd.removeClass('label-success').removeClass('label-warning').removeClass('label-danger').addClass(label);";
+        $js .= "            cmd.classList.remove('label-success', 'label-warning');";
+        $js .= "            cmd.classList.add(label);";
         $js .= "        };";
-        $js .= "        cmd.text(_options.display_value + ' ' + unit)};";
-        $js .= "    jeedom.cmd.update[{$_cmd->getId()}]({ display_value: '".$_cmd->execCmd()."'});";
+        $js .= "        cmd.innerText = _options.display_value + ' ' + unit;";
+        $js .= "    });";
+        $js .= "    jeedom.cmd.refreshValue([{";
+        $js .= "        cmd_id: '{$_cmd->getId()}',";
+        $js .= "        display_value: '{$_cmd->execCmd()}'";
+        $js .= "    }]);";
         $js .= '</script>';
         echo $js;
     }
@@ -214,6 +219,7 @@ $eqLogics = hdsentinel::byType('hdsentinel');
 		<tr>
 			<th>{{Module}}</th>
 			<th>{{IP}}</th>
+			<th>{{SSH Manager}}</th>
 			<th>{{Version HDSentinel}}</th>
 			<th>{{Démarré depuis (s)}}</th>
 			<th>{{Démarré depuis}}</th>
@@ -225,7 +231,24 @@ $eqLogics = hdsentinel::byType('hdsentinel');
 	 <?php
 foreach ($eqLogics as $eqLogic) {
 	echo '<tr><td><a href="' . $eqLogic->getLinkToConfiguration() . '" style="text-decoration: none;">' . $eqLogic->getHumanName(true) . '</a></td>';
-	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('addressip') . '</span></td>';
+    echo '<td>';
+    if ($eqLogic->getConfiguration('windows', false)) {
+        echo '<span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('addressip') . '</span>';
+    } else {
+        $sshmanager = eqLogic::byId($eqLogic->getConfiguration('host_id'));
+        if (is_object($sshmanager)) {
+            echo '<span class="label label-info" style="font-size : 1em; cursor : default;">' . $sshmanager->getConfiguration(sshmanager::CONFIG_HOST) . '</span>';
+        }
+    }
+    echo '</td>';
+
+    echo '<td>';
+    if (is_object($sshmanager)) {
+	    echo '<a href="' . $sshmanager->getLinkToConfiguration() . '" style="text-decoration: none;">' . $sshmanager->getHumanName(true) . '</a>';
+    } else {
+        echo '<span class="label label-info">{{Non}}</span>';
+    }
+    echo '</td>';
 
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('Installed_version') . '</span></td>';
 
@@ -236,21 +259,21 @@ foreach ($eqLogics as $eqLogic) {
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . hdsentinel::translatePowerOnTime($exp2) . '</span></td>';
 
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getStatus('lastCommunication','0') . '</span></td>';
-	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('createtime') . '</span></td></tr>';
+
+    echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('createtime') . '</span></td></tr>';
 }
 ?>
 	</tbody>
 </table>
-  <script>
-    $('#accordionHdsentinel').off('click', '.history').on('click', '.history', function (event) {
-      if(typeof jeeFrontEnd === 'undefined') {
-        $('#md_cmdHistory').dialog({title: "{{Historique}}"}).load('index.php?v=d&modal=cmd.history&id=' + $(this).data('cmd_id')).dialog('open')
-      } else {
-        jeeDialog.dialog({
-          id: 'md_cmdHistory',
-          title: "{{Historique}}",
-          contentUrl: 'index.php?v=d&modal=cmd.history&id=' + event.target.getAttribute('data-cmd_id')
-        })
-      }
+<script>
+    document.getElementById('accordionHdsentinel').addEventListener('click', function(event) {
+        if (event.target.classList.contains('history')) {
+            var cmdId = event.target.getAttribute('data-cmd_id');
+            jeeDialog.dialog({
+                id: 'md_cmdHistory',
+                title: "{{Historique}}",
+                contentUrl: 'index.php?v=d&modal=cmd.history&id=' + cmdId
+            })
+        }
     });
-  </script>
+</script>

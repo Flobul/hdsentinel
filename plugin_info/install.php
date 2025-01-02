@@ -19,7 +19,6 @@
 require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
 
 function hdsentinel_install() {
-
     message::add('hdsentinel', 'Cette mise à jour peut durer un certain temps : elle va stopper puis supprimer les cron actuels sur les appareils distants, puis renvoyer les scripts, installer les paquets le cron et le lancer.');
     if (config::byKey('autoUpdateRemote', 'hdsentinel', false, true)) {
         foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
@@ -43,7 +42,6 @@ function hdsentinel_install() {
 }
 
 function hdsentinel_update() {
-
     message::add('hdsentinel', 'Cette mise à jour peut durer un certain temps : elle va stopper puis supprimer les cron actuels sur les appareils distants, puis renvoyer les scripts, installer les paquets le cron et le lancer.');
     if (config::byKey('autoUpdateRemote', 'hdsentinel', false, true)) {
         foreach (eqLogic::byType('hdsentinel') as $eqLogic) {

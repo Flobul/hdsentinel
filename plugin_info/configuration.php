@@ -99,16 +99,12 @@ sendVarToJS('version', hdsentinel::$_hdsentinelVersion);
 	</div>
 </form>
 <script>
-var dateVersion = $("#span_plugin_install_date").html();
-$("#span_plugin_install_date").empty().append("v" + version + " ("+dateVersion+")");
-
-
-
-$('.allEqlogics').on('click', function () {
-     var action = $(this).attr('data-action');
-	 $.ajax({// fonction permettant de faire de l'ajax
-            type: "POST", // methode de transmission des données au fichier php
-            url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php", // url du fichier php
+document.querySelectorAll('.allEqlogics').forEach(function(button) {
+    button.addEventListener('click', function() {
+        var action = $(this).attr('data-action');
+        domUtils.ajax({
+            type: "POST",
+            url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
             data: {
                 action: 'all',
                 make: action
@@ -119,13 +115,14 @@ $('.allEqlogics').on('click', function () {
             },
             success: function (data) { // si l'appel a bien fonctionné
                 if (data.state != 'ok') {
-                    $('#div_alert').showAlert({message: data.result, level: 'danger'});
+                    jeedomUtils.showAlert({message: data.result, level: 'danger'});
                     return;
                 }
-              console.log(data)
-                $('#div_alert').showAlert({message: '{{Réussie}}', level: 'success'});
+                console.log(data)
+                jeedomUtils.showAlert({message: '{{Réussie}}', level: 'success'});
             }
         });
+    });
 });
 
 </script>

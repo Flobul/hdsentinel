@@ -14,50 +14,274 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 
-prettyPrintDisplayAsTable();
-
-$('body').delegate('#bt_pluginDisplayAsTable[data-coreSupport="1"]', 'click', function() {
-  prettyPrintDisplayAsTable();
+document.getElementById('div_hdsentinel').addEventListener('click', function(event) {
+    var _target = null
+    if (_target = event.target.closest('#bt_hdsentinelDocumentation')) {
+        window.open(_target.getAttribute('data-location'), '_blank');
+    }
+    if (_target = event.target.closest('.pluginAction[data-action=openLocation]')) {
+        window.open(_target.getAttribute('data-location'), '_blank');
+	}
+    if (_target = event.target.closest('#bt_healthSentinel')) {
+        jeeDialog.dialog({
+            title: '{{Santé Hard Disk Sentinel}}',
+            contentUrl: 'index.php?v=d&plugin=hdsentinel&modal=health'
+        });
+    }
+    if (_target = event.target.closest('#bt_pageSentinel')) {
+        jeeDialog.dialog({
+            title: '{{Page html Hard Disk Sentinel}}',
+            contentUrl: 'index.php?v=d&plugin=hdsentinel&modal=page'
+        });
+    }
+    if (_target = event.target.closest('.hdsentinelAction[data-action=sendFiles]')) {
+        domUtils.ajax({
+            type: "POST",
+            url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
+            data: {
+                action: "sendFile",
+                id: document.querySelector('.eqLogicAttr[data-l1key=id]').value
+            },
+            dataType: 'json',
+            error: function (request, status, error) {
+                handleAjaxError(request, status, error);
+            },
+            success: function (data) { // data.result: {publish: "1", install: "1"}}
+                if (data.state != 'ok') {
+                    jeedomUtils.showAlert({message: data.result, level: 'danger'});
+                    return;
+                }
+                if (data.result != '') {
+                    if (data.result.publish != "1" || data.result.install != "1") {
+                        jeedomUtils.showAlert({message: '{{Envoi des scripts échoué :}}'+JSON.stringify(data.result), level: 'danger'});
+                        return;
+                    }
+                    jeedomUtils.showAlert({message: '{{Envoi des scripts réalisé avec succès.}}', level: 'success'});
+                }
+            }
+        });
+    }
+    if (_target = event.target.closest('.hdsentinelAction[data-action=installDependancy]')) {
+        domUtils.ajax({
+            type: "POST",
+            url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
+            data: {
+                action: "installDependancy",
+                id: document.querySelector('.eqLogicAttr[data-l1key=id]').value
+            },
+            dataType: 'json',
+            error: function (request, status, error) {
+                handleAjaxError(request, status, error);
+            },
+            success: function (data) {
+                if (data.state != 'ok') {
+                    jeedomUtils.showAlert({message: data.result, level: 'danger'});
+                    return;
+                }
+                jeedomUtils.showAlert({message: '{{Installation lancée}}', level: 'success'});
+            }
+        });
+    }
+    if (_target = event.target.closest('.hdsentinelAction[data-action=getLogDependancy]')) {
+        domUtils.ajax({
+            type: "POST",
+            url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
+            data: {
+                action: "getLogDependancy",
+                id: document.querySelector('.eqLogicAttr[data-l1key=id]').value
+            },
+            dataType: 'json',
+            error: function (request, status, error) {
+                handleAjaxError(request, status, error);
+            },
+            success: function (data) {
+                if (data.state != 'ok') {
+                    jeedomUtils.showAlert({message: data.result, level: 'danger'});
+                    return;
+                }
+            }
+        });
+    }
+    if (_target = event.target.closest('.hdsentinelAction[data-action=getLog]')) {
+        domUtils.ajax({
+            type: "POST",
+            url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
+            data: {
+                action: "getLog",
+                id: document.querySelector('.eqLogicAttr[data-l1key=id]').value
+            },
+            dataType: 'json',
+            error: function (request, status, error) {
+                handleAjaxError(request, status, error);
+            },
+            success: function (data) {
+                if (data.state != 'ok') {
+                    jeedomUtils.showAlert({message: data.result, level: 'danger'});
+                    return;
+                }
+            }
+        });
+    }
+    if (_target = event.target.closest('.hdsentinelAction[data-action=launchCron]')) {
+        var id = document.querySelector('.eqLogicAttr[data-l1key=id]').value;
+        domUtils.ajax({
+            type: "POST",
+            url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
+            data: {
+                action: "launchCron",
+                id: id
+            },
+            dataType: 'json',
+            error: function (request, status, error) {
+                handleAjaxError(request, status, error);
+            },
+            success: function (data) {
+                if (data.state != 'ok') {
+                    jeedomUtils.showAlert({message: data.result, level: 'danger'});
+                    return;
+                }
+                refreshStatusMode(id);
+                if ((1 - data.result) != "1") {
+                    jeedomUtils.showAlert({message: '{{Lancement du cron échoué :}}'+data.result, level: 'danger'});
+                    return;
+                }
+                jeedomUtils.showAlert({message: '{{Lancement du cron réussi.}}', level: 'success'});
+            }
+        });
+    }
+    if (_target = event.target.closest('.hdsentinelAction[data-action=removeCron]')) {
+        var id = document.querySelector('.eqLogicAttr[data-l1key=id]').value;
+        domUtils.ajax({
+            type: "POST",
+            url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
+            data: {
+                action: "removeCron",
+                id: id
+            },
+            dataType: 'json',
+            error: function (request, status, error) {
+                handleAjaxError(request, status, error);
+            },
+            success: function (data) {
+                if (data.state != 'ok') {
+                    jeedomUtils.showAlert({message: data.result, level: 'danger'});
+                    return;
+                }
+                refreshStatusMode(id);
+                if ((1 - data.result) != '1') {
+                    jeedomUtils.showAlert({message: '{{Suppression du cron échouée :}}'+data.result, level: 'danger'});
+                    return;
+                }
+                jeedomUtils.showAlert({message: '{{Suppression du cron réussie.}}', level: 'success'});
+            }
+        });
+    }
+    if (_target = event.target.closest('.hdsentinelAction[data-action=stopCron]')) {
+        var id = document.querySelector('.eqLogicAttr[data-l1key=id]').value;
+        domUtils.ajax({
+            type: "POST",
+            url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
+            data: {
+                action: "stopCron",
+                id: id
+            },
+            dataType: 'json',
+            error: function (request, status, error) {
+                handleAjaxError(request, status, error);
+            },
+            success: function (data) {
+                if (data.state != 'ok') {
+                    jeedomUtils.showAlert({message: data.result, level: 'danger'});
+                    return;
+                }
+                refreshStatusMode(id);
+                if ((1 - data.result) != '1') {
+                    jeedomUtils.showAlert({message: '{{Arrêt du cron échoué :}}'+data.result, level: 'danger'});
+                    return;
+                }
+                jeedomUtils.showAlert({message: '{{Arrêt du cron réussie.}}', level: 'success'});
+            }
+        });
+    }
+    if (_target = event.target.closest('.hdsentinelAction[data-action=changeAutoModeRemote]')) {
+        var auto = 1 -  document.querySelector('.eqLogicAttr[data-l2key="remoteDaemonAuto"]').value;
+        document.querySelector('.eqLogicAttr[data-l2key="remoteDaemonAuto"]').innerValue = auto;
+        document.querySelector('.eqLogicAction[data-action=save]').click();
+    }
+    if (_target = event.target.closest('.hdsentinelAction[data-action=test]')) {
+        var id = document.querySelector('.eqLogicAttr[data-l1key=id]').value;
+        domUtils.ajax({
+            type: "POST",
+            url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
+            data: {
+                action: "test",
+                id: id
+            },
+            dataType: 'json',
+            error: function (request, status, error) {
+                handleAjaxError(request, status, error);
+            },
+            success: function (data) {
+                if (data.state != 'ok') {
+                    jeedomUtils.showAlert({message: data.result, level: 'danger'});
+                    return;
+                }
+            }
+        });
+    }
+    if ((_target = event.target.closest('#manually')) || (_target = event.target.closest('#windows'))) {
+        manageCheckBoxManualWindows();
+    }
 });
 
-function prettyPrintDisplayAsTable() {
-
-  if (getCookie('jeedom_displayAsTable') == 'true' || jeedom.theme.theme_displayAsTable == 1){
-    $('#accordionObject > div.objectSortable').removeClass(function (index, css) {
-      return (css.match (/\bcol-xs-\S+/g) || []).join(' ');
-    });
-    $('#accordionObject > div.objectSortable').addClass('col-xs-4');
-  } else {
-    $('#accordionObject > div.objectSortable').removeClass('col-xs-4').addClass('col-xs-2'); // addClass
-  }
+function manageCheckBoxManualWindows() {
+    var windowsCheckbox = document.getElementById('windows');
+    var manuallyCheckbox = document.getElementById('manually');
+    var windowsElement = document.querySelectorAll('.windows');
+    var sshHostsElement = document.querySelectorAll('.sshHosts');
+    var manuallyElement = document.querySelectorAll('.manually');
+    var automaticallyElement = document.querySelectorAll('.automatically');
+    if (windowsCheckbox.checked) {
+        windowsElement.forEach(function(element) {
+            element.style.display = 'block';
+        });
+        sshHostsElement.forEach(function(element) {
+            element.style.display = 'none';
+        });
+        manuallyElement.forEach(function(element) {
+            element.style.display = 'none';
+        });
+        automaticallyElement.forEach(function(element) {
+            element.style.display = 'block';
+        });
+    } else {
+        windowsElement.forEach(function(element) {
+            element.style.display = 'none';
+        });
+        if (manuallyCheckbox.checked) {
+            manuallyElement.forEach(function(element) {
+                element.style.display = 'none';
+            });
+            automaticallyElement.forEach(function(element) {
+                element.style.display = 'block';
+            });
+        } else {
+            manuallyElement.forEach(function(element) {
+                element.style.display = 'block';
+            });
+            automaticallyElement.forEach(function(element) {
+                element.style.display = 'none';
+            });
+            windowsElement.forEach(function(element) {
+                element.style.display = 'none';
+            });
+        }
+    } 
 }
-
-$('.bt_hdsentinelDocumentation').off('click').on('click',function(){
-    window.open($(this).attr("data-location"), "_blank", null);
-});
-
-$('#bt_healthSentinel').on('click', function () {
-  $('#md_modal').dialog({title: "{{Santé Hard Disk Sentinel}}"});
-  $('#md_modal').load('index.php?v=d&plugin=hdsentinel&modal=health').dialog('open');
-});
-
-$('#bt_pageSentinel').on('click', function () {
-  $('#md_modal').dialog({title: "{{Page Html Hard Disk Sentinel}}"});
-  $('#md_modal').load('index.php?v=d&plugin=hdsentinel&modal=page').dialog('open');
-});
-
-$("#table_cmd").sortable({
-    axis: "y",
-    cursor: "move",
-    items: ".cmd",
-    placeholder: "ui-state-highlight",
-    tolerance: "intersect",
-    forcePlaceholderSize: true
-});
 
 function refreshStatusMode(_id) {
 
-    $.ajax({
+    domUtils.ajax({
         type: "POST",
         url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
         data: {
@@ -66,350 +290,96 @@ function refreshStatusMode(_id) {
         },
         dataType: 'json',
         error: function (request, status, error) {
-            handleAjaxError(request, status, error,$('#div_alert'));
+            handleAjaxError(request, status, error);
         },
         success: function (data) {
             if (data.state != 'ok') {
-                $('#div_alert').showAlert({message: data.result, level: 'danger'});
+                jeedomUtils.showAlert({message: data.result, level: 'danger'});
                 return;
             }
-          console.log('status', data)
-
-            if (data.result && data.result == '1') {
-                $('.hdsentinelAction[data-action=checkremotecron]').removeClass('btn-danger').addClass('btn-success');
-                $('.hdsentinelAction[data-action=checkremotecron]').html('<span class="label label-success btn-xs">{{Lancé}}</span>');
-                $('.hdsentinelAction[data-action=launchCron]').hide();
-                $('.hdsentinelAction[data-action=stopCron]').show();
-                $('.hdsentinelAction[data-action=removeCron]').show();
+            if (data.result && data.result === "1") {
+                document.querySelector('.hdsentinelAction[data-action=checkremotecron]').classList.remove('btn-danger', 'btn-warning');
+                document.querySelector('.hdsentinelAction[data-action=checkremotecron]').classList.add('btn-success');
+                document.querySelector('.hdsentinelAction[data-action=checkremotecron]').innerHTML = '<span class="label label-success btn-xs">{{Lancé}}</span>';
+                document.querySelector('.hdsentinelAction[data-action=launchCron]').unseen();
+                document.querySelector('.hdsentinelAction[data-action=stopCron]').seen();
+                document.querySelector('.hdsentinelAction[data-action=removeCron]').seen();
+            } else if (data.result && data.result === "0") {
+                document.querySelector('.hdsentinelAction[data-action=checkremotecron]').classList.remove('btn-success', 'btn-warning');
+                document.querySelector('.hdsentinelAction[data-action=checkremotecron]').classList.add('btn-danger');
+                document.querySelector('.hdsentinelAction[data-action=checkremotecron]').innerHTML = '<span class="label label-danger btn-xs">NOK</span>';
+                document.querySelector('.hdsentinelAction[data-action=launchCron]').seen();
+                document.querySelector('.hdsentinelAction[data-action=stopCron]').unseen();
+                document.querySelector('.hdsentinelAction[data-action=removeCron]').unseen();
             } else {
-                $('.hdsentinelAction[data-action=checkremotecron]').removeClass('btn-success').addClass('btn-danger');
-                $('.hdsentinelAction[data-action=checkremotecron]').html('<span class="label label-danger btn-xs">NOK</span>');
-                $('.hdsentinelAction[data-action=launchCron]').show();
-                $('.hdsentinelAction[data-action=stopCron]').hide();
-                $('.hdsentinelAction[data-action=removeCron]').hide();
+                document.querySelector('.hdsentinelAction[data-action=checkremotecron]').classList.remove('btn-success', 'btn-danger');
+                document.querySelector('.hdsentinelAction[data-action=checkremotecron]').classList.add('btn-warning');
+                document.querySelector('.hdsentinelAction[data-action=checkremotecron]').innerHTML = '<span class="label label-warning btn-xs">{{Hors ligne}}</span>';
+                document.querySelector('.hdsentinelAction[data-action=launchCron]').unseen();
+                document.querySelector('.hdsentinelAction[data-action=stopCron]').unseen();
+                document.querySelector('.hdsentinelAction[data-action=removeCron]').unseen();
             }
         }
     });
 }
 
-$('.hdsentinelAction[data-action=sendFiles]').on('click', function () {
-    $.ajax({
-        type: "POST",
-        url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
-        data: {
-            action: "sendFile",
-            id: $('.eqLogicAttr[data-l1key=id]').value()
-        },
-        dataType: 'json',
-        error: function (request, status, error) {
-            handleAjaxError(request, status, error,$('#div_alert'));
-        },
-        success: function (data) { // data.result: {publish: "1", install: "1"}}
-            if (data.state != 'ok') {
-                $('#div_alert').showAlert({message: data.result, level: 'danger'});
-                return;
-            }
-            if (data.result != '') {
-                if (data.result.publish != "1" || data.result.install != "1") {
-                    $('#div_alert').showAlert({message: '{{Envoi des scripts échoué :}}'+JSON.stringify(data.result), level: 'danger'});
-                    return;
-                }
-                $('#div_alert').showAlert({message: '{{Envoi des scripts réalisé avec succès.}}', level: 'success'});
-            }
-        }
-    });
-});
 
-$('.hdsentinelAction[data-action=installDependancy]').on('click', function () {
-    $.ajax({
-        type: "POST",
-        url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
-        data: {
-            action: "installDependancy",
-            id: $('.eqLogicAttr[data-l1key=id]').value()
-        },
-        dataType: 'json',
-        error: function (request, status, error) {
-            handleAjaxError(request, status, error,$('#div_alert'));
-        },
-        success: function (data) {
-            if (data.state != 'ok') {
-                $('#div_alert').showAlert({message: data.result, level: 'danger'});
-                return;
-            }
-            $('#div_alert').showAlert({message: '{{Installation lancée}}', level: 'success'});
-        }
-    });
-});
-
-$('.hdsentinelAction[data-action=getLogDependancy]').on('click', function () {
-    $.ajax({
-        type: "POST",
-        url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
-        data: {
-            action: "getLogDependancy",
-            id: $('.eqLogicAttr[data-l1key=id]').value()
-        },
-        dataType: 'json',
-        error: function (request, status, error) {
-            handleAjaxError(request, status, error,$('#div_alert'));
-        },
-        success: function (data) {
-            if (data.state != 'ok') {
-                $('#div_alert').showAlert({message: data.result, level: 'danger'});
-                return;
-            }
-
-          console.log(data)
-        }
-    });
-});
-
-$('.hdsentinelAction[data-action=getLog]').on('click', function () {
-    $.ajax({
-        type: "POST",
-        url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
-        data: {
-            action: "getLog",
-            id: $('.eqLogicAttr[data-l1key=id]').value()
-        },
-        dataType: 'json',
-        error: function (request, status, error) {
-            handleAjaxError(request, status, error,$('#div_alert'));
-        },
-        success: function (data) {
-            if (data.state != 'ok') {
-                $('#div_alert').showAlert({message: data.result, level: 'danger'});
-                return;
-            }
-        }
-    });
-});
-
-$('.hdsentinelAction[data-action=launchCron]').on('click', function () {
-    var id = $('.eqLogicAttr[data-l1key=id]').value();
-    $.ajax({
-        type: "POST",
-        url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
-        data: {
-            action: "launchCron",
-            id: id
-        },
-        dataType: 'json',
-        error: function (request, status, error) {
-            handleAjaxError(request, status, error,$('#div_alert'));
-        },
-        success: function (data) {
-            if (data.state != 'ok') {
-                $('#div_alert').showAlert({message: data.result, level: 'danger'});
-                return;
-            }
-            refreshStatusMode(id);
-          console.log('launch', data)
-
-            if ((1 - data.result) != "1") {
-                $('#div_alert').showAlert({message: '{{Lancement du cron échoué :}}'+data.result, level: 'danger'});
-                return;
-            }
-            $('#div_alert').showAlert({message: '{{Lancement du cron réussi.}}', level: 'success'});
-        }
-    });
-});
-
-$('.hdsentinelAction[data-action=removeCron]').on('click', function () {
-    var id = $('.eqLogicAttr[data-l1key=id]').value();
-    $.ajax({
-        type: "POST",
-        url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
-        data: {
-            action: "removeCron",
-            id: id
-        },
-        dataType: 'json',
-        error: function (request, status, error) {
-            handleAjaxError(request, status, error,$('#div_alert'));
-        },
-        success: function (data) {
-            if (data.state != 'ok') {
-                $('#div_alert').showAlert({message: data.result, level: 'danger'});
-                return;
-            }
-            refreshStatusMode(id);
-          console.log('remove', data)
-
-            if ((1 - data.result) != '1') {
-                $('#div_alert').showAlert({message: '{{Suppression du cron échouée :}}'+data.result, level: 'danger'});
-                return;
-            }
-            $('#div_alert').showAlert({message: '{{Suppression du cron réussie.}}', level: 'success'});
-        }
-    });
-});
-
-$('.hdsentinelAction[data-action=stopCron]').on('click', function () {
-    var id = $('.eqLogicAttr[data-l1key=id]').value();
-    $.ajax({
-        type: "POST",
-        url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
-        data: {
-            action: "stopCron",
-            id: id
-        },
-        dataType: 'json',
-        error: function (request, status, error) {
-            handleAjaxError(request, status, error,$('#div_alert'));
-        },
-        success: function (data) {
-            if (data.state != 'ok') {
-                $('#div_alert').showAlert({message: data.result, level: 'danger'});
-                return;
-            }
-            refreshStatusMode(id);
-          console.log('stop', data)
-            if ((1 - data.result) != '1') {
-                $('#div_alert').showAlert({message: '{{Arrêt du cron échoué :}}'+data.result, level: 'danger'});
-                return;
-            }
-            $('#div_alert').showAlert({message: '{{Arrêt du cron réussie.}}', level: 'success'});
-        }
-    });
-});
-
-$('.hdsentinelAction[data-action=changeAutoModeRemote]').on('click',function(){
-    var auto = 1 - $('.eqLogicAttr[data-l2key="remoteDaemonAuto"]').value();
-    $('.eqLogicAttr[data-l2key="remoteDaemonAuto"]').val(auto);
-    $('.eqLogicAction[data-action=save]').click();
-});
-
-$('.hdsentinelAction[data-action=test]').on('click', function () {
-    var id = $('.eqLogicAttr[data-l1key=id]').value();
-    $.ajax({
-        type: "POST",
-        url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
-        data: {
-            action: "test",
-            id: id
-        },
-        dataType: 'json',
-        error: function (request, status, error) {
-            handleAjaxError(request, status, error,$('#div_alert'));
-        },
-        success: function (data) {
-            if (data.state != 'ok') {
-                $('#div_alert').showAlert({message: data.result, level: 'danger'});
-                return;
-            }
-            console.log(data)
-        }
-    });
-});
-
-$('#windows').off('click').on('click', function() {
-  if($('#windows').prop("checked")) {
-    $('.windows').show();
-    $('.sshHosts').hide(); 
-    $('.manually').hide();
-    $('.automatically').show();
-  } else {
-    $('.sshHosts').show(); 
-    $('.windows').hide();
-    if($('#manually').prop("checked")) {
-      $('.manually').hide();
-      $('.automatically').show();
-    } else {
-      $('.manually').show();
-      $('.automatically').hide();
-      $('.windows').hide();
-    }
-  }
-});
-
-$('#manually').off('click').on('click', function() {
-  if($('#windows').prop("checked")) {
-    $('.windows').show();
-    $('.manually').hide();
-    $('.automatically').show();
-  } else {
-    $('.windows').hide();
-    if($('#manually').prop("checked")) {
-      $('.manually').hide();
-      $('.automatically').show();
-    } else {
-      $('.manually').show();
-      $('.automatically').hide();
-      $('.windows').hide();
-    }
-  }
-});
 
 function printEqLogic(_eqLogic) {
 
-  buildSelectHost(_eqLogic.configuration.host_id);
-  $('#table_infoseqlogic tbody').empty();
+    buildSelectHost(_eqLogic.configuration.host_id);
+    document.querySelector('#table_infoseqlogic tbody').innerHTML = '';
+    manageCheckBoxManualWindows();
 
-  if(_eqLogic.configuration.windows && _eqLogic.configuration.windows == 1) {
-    $('.windows').show();
-    $('.sshHosts').hide(); 
-    $('.manually').hide();
-    $('.automatically').show();
-  } else {
-    $('.sshHosts').show(); 
-    $('.windows').hide();
-    if(_eqLogic.configuration.manually && _eqLogic.configuration.manually == 1) {
-      $('.manually').hide();
-      $('.automatically').show();
+    printEqLogicHelper("{{Version de HDSentinel installée}}", "Installed_version", _eqLogic);
+    printEqLogicHelper("{{Adresse MAC}}", "MAC_Address", _eqLogic);
+    printEqLogicHelper("{{Date du dernier rapport}}", "Current_Date_And_Time", _eqLogic);
+    printEqLogicHelper("{{Date de création du rapport}}", "Report_Creation_Time", _eqLogic);
+    printEqLogicHelper("{{Version du système}}", "OS_Version", _eqLogic);
+    printEqLogicHelper("{{ID du processus}}", "Process_ID", _eqLogic);
+    printEqLogicHelper("{{Démarré depuis}}", "Uptime", _eqLogic);
+    printEqLogicHelper("{{Démarré depuis}}", "System_Uptime", _eqLogic);
+
+    if (_eqLogic.configuration.host_id == '') {
+        document.querySelector('.hdsentinelAction[data-action=checkremotecron]').classList.remove('btn-success', 'btn-warning');
+        document.querySelector('.hdsentinelAction[data-action=checkremotecron]').classList.add('btn-danger');
+        document.querySelector('.hdsentinelAction[data-action=checkremotecron]').innerHTML = '<span class="label label-danger btn-xs">NOK</span>';
+        return;
     } else {
-      $('.manually').show();
-      $('.automatically').hide();
+        refreshStatusMode(_eqLogic.id);
     }
-  }
-  //affichage des configurations du device
-  printEqLogicHelper("{{Version de HDSentinel installée}}", "Installed_version", _eqLogic);
-  printEqLogicHelper("{{Adresse MAC}}", "MAC_Address", _eqLogic);
-  printEqLogicHelper("{{Date du dernier rapport}}", "Current_Date_And_Time", _eqLogic);
-  printEqLogicHelper("{{Date de création du rapport}}", "Report_Creation_Time", _eqLogic);
-  printEqLogicHelper("{{Version du système}}", "OS_Version", _eqLogic);
-  printEqLogicHelper("{{ID du processus}}", "Process_ID", _eqLogic);
-  printEqLogicHelper("{{Démarré depuis}}", "Uptime", _eqLogic);
-  printEqLogicHelper("{{Démarré depuis}}", "System_Uptime", _eqLogic);
 
-  if (_eqLogic.configuration.host_id == '') {
-      $('.hdsentinelAction[data-action=checkremotecron]').removeClass('btn-success').addClass('btn-danger');
-      $('.hdsentinelAction[data-action=checkremotecron]').html('<span class="label label-danger btn-sm">NOK</span>');
-      return;
-  } else {
-      refreshStatusMode(_eqLogic.id);
-  }
+    if (_eqLogic.configuration.remoteDaemonAuto === "1"){
+        document.querySelector('.hdsentinelAction[data-action=stopCron]').unseen();
+        document.querySelector('.hdsentinelAction[data-action=changeAutoModeRemote]').innerHTML = '<i class="fas fa-times"></i> {{Désactiver}}';
+        document.querySelector('.hdsentinelAction[data-action=changeAutoModeRemote]').classList.remove('btn-success', 'btn-warning');
+        document.querySelector('.hdsentinelAction[data-action=changeAutoModeRemote]').classList.add('btn-danger');
+    } else{
+        document.querySelector('.hdsentinelAction[data-action=stopCron]').seen();
+        document.querySelector('.hdsentinelAction[data-action=changeAutoModeRemote]').innerHTML = '<i class="fas fa-magic"></i> {{Activer}}';
+        document.querySelector('.hdsentinelAction[data-action=changeAutoModeRemote]').classList.remove('btn-danger', 'btn-warning');
+        document.querySelector('.hdsentinelAction[data-action=changeAutoModeRemote]').classList.add('btn-success');
+    }
 
-  if(_eqLogic.configuration.remoteDaemonAuto == 1){
-    $('.hdsentinelAction[data-action=stopremote]').hide();
-    $('.hdsentinelAction[data-action=changeAutoModeRemote]').removeClass('btn-success').addClass('btn-danger');
-    $('.hdsentinelAction[data-action=changeAutoModeRemote]').html('<i class="fas fa-times"></i> {{Désactiver}}');
-  } else{
-    $('.hdsentinelAction[data-action=stopremote]').show();
-    $('.hdsentinelAction[data-action=changeAutoModeRemote]').removeClass('btn-danger').addClass('btn-success');
-    $('.hdsentinelAction[data-action=changeAutoModeRemote]').html('<i class="fas fa-magic"></i> {{Activer}}');
-  }
-
-  $.ajax({// fonction permettant de faire de l'ajax
-      type: "POST", // methode de transmission des données au fichier php
-      url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php", // url du fichier php
-      data: {
-          action: "getImage",
-          eq_id: _eqLogic.id
-      },
-      dataType: 'json',
-      error: function (request, status, error) {
-          handleAjaxError(request, status, error);
-      },
-      success: function (data) { // si l'appel a bien fonctionné
-          if (data.state != 'ok' || !data.result) {
-              $('#img_device').attr("src", 'plugins/hdsentinel/plugin_info/hdsentinel_icon.png');
-              return;
-          }
-          $('#img_device').attr("src", data.result);
-      }
-  });
+    domUtils.ajax({
+        type: "POST",
+        url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
+        data: {
+            action: "getImage",
+            eq_id: _eqLogic.id
+        },
+        dataType: 'json',
+        error: function (request, status, error) {
+            handleAjaxError(request, status, error);
+        },
+        success: function (data) { // si l'appel a bien fonctionné
+            if (data.state != 'ok' || !data.result) {
+                document.getElementById('img_device').setAttribute("src", 'plugins/hdsentinel/plugin_info/hdsentinel_icon.png');
+                return;
+            }
+            document.getElementById('img_device').setAttribute("src", data.result);
+        }
+    });
 }
 
 function addCmdToTable(_cmd) {
@@ -419,77 +389,90 @@ function addCmdToTable(_cmd) {
     if (!isset(_cmd.configuration)) {
         _cmd.configuration = {};
     }
-	var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
+    var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
+    tr += '<td class="hidden-xs">'
+    tr += '<span class="cmdAttr" data-l1key="id"></span>'
+    tr += '</td>'
+    tr += '<td>'
+    tr += '<div class="input-group">'
+    tr += '<input class="cmdAttr form-control input-sm roundedLeft" data-l1key="name" placeholder="{{Nom de la commande}}">'
+    tr += '<span class="input-group-btn"><a class="cmdAction btn btn-sm btn-default" data-l1key="chooseIcon" title="{{Choisir une icône}}"><i class="fas fa-icons"></i></a></span>'
+    tr += '<span class="cmdAttr input-group-addon roundedRight" data-l1key="display" data-l2key="icon" style="font-size:19px;padding:0 5px 0 0!important;"></span>'
+    tr += '</div>'
+    tr += '<select class="cmdAttr form-control input-sm" data-l1key="value" style="display:none;margin-top:5px;" title="{{Commande info liée}}">'
+    tr += '<option value="">{{Aucune}}</option>'
+    tr += '</select>'
+    tr += '</td>'
 
-		tr += '<td>';
-		tr += '<span class="cmdAttr" data-l1key="id" ></span>';
-		tr += '</td>';
+    tr += '<td>';
+    tr += '<span class="type" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType() + '</span>';
+    tr += '<span class="subType" subType="' + init(_cmd.subType) + '"></span>';
+    tr += '</td>';
+  
+    tr += '<td>'
+    tr += '<label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isVisible" checked/>{{Afficher}}</label> '
+    tr += '<label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isHistorized" checked/>{{Historiser}}</label> '
+    tr += '<label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="display" data-l2key="invertBinary"/>{{Inverser}}</label> '
+    tr += '<div style="margin-top:7px;">'
+    tr += '<input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:80px;display:inline-block;margin-right:2px;">'
+    tr += '<input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:80px;display:inline-block;margin-right:2px;">'
+    tr += '<input class="tooltips cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;max-width:80px;display:inline-block;margin-right:2px;">'
+    tr += '</div>'
+    tr += '</td>'
 
-		tr += '<td>';
-		tr += '<a class="cmdAction btn btn-default btn-sm" data-l1key="chooseIcon" style="display:inline"><i class="fa fa-flag"></i> Icone</a>';
-		tr += '<input class="cmdAttr form-control input-sm" data-l1key="name" style="width:180px;display:inline">';
-		tr += '<span class="cmdAttr cmdAction" data-l1key="display" data-l2key="icon" style="margin-left : 10px;"></span>';
-		tr += '<span class="cmdAttr" data-l1key="display" data-l2key="generic_type" style="display:none;"></span>';
-		tr += '<span><input class="cmdAttr form-control" data-l1key="configuration" data-l2key="type" style="display: none" ></input></span>';
-		tr += '<span><input class="cmdAttr form-control" data-l1key="logicalId" style="display: none" ></input></span>';
-		tr += '</td>';
+    tr += '<td>';
+    if (init(_cmd.type) == 'info') {
+      tr += '<span class="cmdAttr" data-l1key="htmlstate"></span>';
+    }
+	tr += '</td>';
 
-        tr += '<td style="min-width:120px;width:140px;">';
-        tr += '    <span><input type="checkbox" class="cmdAttr" data-size="mini" data-l1key="isVisible" checked/> {{Afficher}}<br/></span>';
-        tr += '    <span><input type="checkbox" class="cmdAttr" data-l1key="isHistorized"/> {{Historiser}}</span>';
-        tr += '</td>';
+    tr += '<td style="min-width:80px;width:200px;">';
+    tr += '<div class="input-group">';
+    if (is_numeric(_cmd.id) && _cmd.id != '') {
+        tr += '<a class="btn btn-default btn-xs cmdAction roundedLeft" data-action="configure" title="{{Configuration de la commande}} ' + _cmd.type + '"><i class="fa fa-cogs"></i></a>';
+        tr += '<a class="btn btn-success btn-xs cmdAction" data-action="test" title="{{Tester}}"><i class="fa fa-rss"></i> {{Tester}}</a>';
+    }
+    tr += '<a class="btn btn-danger btn-xs cmdAction roundedRight" data-action="remove" title="{{Suppression de la commande}} ' + _cmd.type + '"><i class="fas fa-minus-circle"></i></a>';
+    tr += '</tr>';
 
-		tr += '<td>';
-        if (init(_cmd.type) == 'info') {
-            tr += '<span class="cmdAttr" data-l1key="htmlstate" style="display:block;text-align:center;"></span>';
+    let newRow = document.createElement('tr')
+    newRow.innerHTML = tr
+    newRow.addClass('cmd')
+    newRow.setAttribute('data-cmd_id', init(_cmd.id))
+    document.getElementById('table_cmd').querySelector('tbody').appendChild(newRow)
+
+    jeedom.eqLogic.buildSelectCmd({
+        id: document.querySelector('.eqLogicAttr[data-l1key="id"]').jeeValue(),
+        filter: { type: 'info' },
+        error: function(error) {
+            jeedomUtils.showAlert({ message: error.message, level: 'danger' })
+        },
+        success: function(result) {
+            newRow.querySelector('.cmdAttr[data-l1key="value"]').insertAdjacentHTML('beforeend', result)
+            newRow.querySelector('.cmdAttr[data-l1key="configuration"][data-l2key="updateCmdToValue"]')?.insertAdjacentHTML('beforeend', result)
+            newRow.setJeeValues(_cmd, '.cmdAttr')
+            jeedom.cmd.changeType(newRow, init(_cmd.subType))
         }
-        if (init(_cmd.subType) == 'numeric') {
-          tr += '    <input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="display:inline-block;width: 75px;"></input>';
-          tr += '    <input class="cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="display:inline-block;width: 50px;"></input>';
-          tr += '    <style>.select {}</style>';
-          tr += '    <input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width: 75px;"></input>';
-        }
-		tr += '</td>';
-
-        tr += '<td style="min-width:100px;width:150px;">';
-        tr += '<div class="input-group">';
-        if (is_numeric(_cmd.id) && _cmd.id != '') {
-          tr += '<a class="btn btn-default btn-xs cmdAction roundedLeft" data-action="configure" title="{{Configuration de la commande}} ' + _cmd.type + '"><i class="fa fa-cogs"></i></a>';
-          tr += '<a class="btn btn-success btn-xs cmdAction" data-action="test" title="{{Tester}}"><i class="fa fa-rss"></i> {{Tester}}</a>';
-        }
-        tr += '<a class="btn btn-danger btn-xs cmdAction roundedRight" data-action="remove" title="{{Suppression de la commande}} ' + _cmd.type + '"><i class="fas fa-minus-circle"></i></a>';
-        tr += '</div>';
-        tr += '</td>';
-		tr += '</tr>';
-
-		$('#table_cmd tbody').append(tr);
-		$('#table_cmd tbody tr:last').setValues(_cmd, '.cmdAttr');
-		jeedom.cmd.changeType($('#table_cmd tbody tr:last'), init(_cmd.subType));
-
+    });
 }
 
 function printEqLogicHelper(_label, _name, _eqLogic) {
-
-  if (isset(_eqLogic.result)) {
-    var eqLogic = _eqLogic.result;
-  } else {
-    var eqLogic = _eqLogic;
-  }
-  if (isset(eqLogic.configuration[_name])) {
-    if (eqLogic.configuration[_name] !== undefined) {
-      var trm = '<tr>';
-      trm += '	<td class="col-sm-4" style="min-width:119px !important">';
-      trm += '		<span style="font-size : 1em;">' + _label + '</span>';
-      trm += '	</td>';
-      trm += '	<td>';
-      trm += '		<span class="label label-default" style="font-size : 1em;">';
-      trm += '			<span class="eqLogicAttr" data-l1key="configuration" data-l2key="'+_name+'">';
-      trm += '			</span>';
-      trm += '		</span>';
-      trm += '	</td>';
-      trm += '</tr>';
-      $('#table_infoseqlogic tbody').append(trm);
-      $('#table_infoseqlogic tbody tr:last').setValues(eqLogic, '.eqLogicAttr');
+    var eqLogic = _eqLogic.result ? _eqLogic.result : _eqLogic;
+    if (eqLogic.configuration && eqLogic.configuration[_name] !== undefined) {
+        var trm = '<tr>';
+        trm += '	<td class="col-sm-4" style="min-width:119px !important">';
+        trm += '		<span style="font-size : 1em;">' + _label + '</span>';
+        trm += '	</td>';
+        trm += '	<td>';
+        trm += '		<span class="label label-default" style="font-size : 1em;">';
+        trm += '			<span class="eqLogicAttr" data-l1key="configuration" data-l2key="'+_name+'">';
+        trm += '			</span>';
+        trm += '		</span>';
+        trm += '	</td>';
+        trm += '</tr>';
+        var newRow = document.createElement('tr');
+        newRow.innerHTML = trm;
+        document.querySelector('#table_infoseqlogic tbody').appendChild(newRow);
+        newRow.setJeeValues(eqLogic, '.eqLogicAttr');
     }
-  }
 }

@@ -19,13 +19,13 @@ $eqLogics = eqLogic::byType($plugin->getId());
       color:white;
   }
 
-  .bt_hdsentinelDocumentation {
+  #bt_hdsentinelDocumentation {
       font-size: 2.3rem;
       color: mediumslateblue;
   }
 </style>
 
-<div class="row row-overflow">
+<div class="row row-overflow" id="div_hdsentinel">
 	<div class="col-xs-12 eqLogicThumbnailDisplay">
 		<legend><i class="fa fa-cog"></i> {{Gestion}}</legend>
 		<div class="eqLogicThumbnailContainer">
@@ -53,11 +53,17 @@ $eqLogics = eqLogic::byType($plugin->getId());
 				<span>{{Page Html}}</span>
 			</div>
 
-			<div class="cursor logoSecondary bt_hdsentinelDocumentation" data-location="<?=$plugin->getDocumentation()?>">
+			<div class="cursor logoSecondary" id="bt_hdsentinelDocumentation" data-location="<?=$plugin->getDocumentation()?>">
 				<i class="icon loisir-livres"></i>
 				<br><br>
 				<span>{{Documentation}}</span>
 			</div>
+  
+            <div class="cursor pluginAction logoSecondary" data-action="openLocation" data-location="https://community.jeedom.com/tag/plugin-<?= $plugin->getId() ?>">
+                <i class="fas fa-thumbs-up icon_green"></i>
+                <br>
+                <span style="color:var(--txt-color)">{{Community}}</span>
+            </div>
 		</div>
 
 		<?php
