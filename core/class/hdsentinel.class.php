@@ -682,6 +682,25 @@ class hdsentinel extends eqLogic
         return preg_match('/(^|\s)1(\s|$)/', $this->normalizeCmdResult($_result)) === 1;
     }
 
+    private function cmdResultIsZero($_result)
+    {
+        return preg_match('/(^|\s)0(\s|$)/', $this->normalizeCmdResult($_result)) === 1;
+    }
+
+    private function remoteFileExists($_path)
+    {
+        $check = 'test -f ' . escapeshellarg($_path) . ' && echo 1 || echo 0';
+        $cmd = $this->getSudoCmd() . 'sh -c ' . escapeshellarg($check);
+        return $this->cmdResultIsOne($this->executeCmds($cmd));
+    }
+
+    private function remoteIsSynology()
+    {
+        $check = '[ -f /etc/synoinfo.conf ] || [ -f /etc.defaults/synoinfo.conf ] && echo 1 || echo 0';
+        $cmd = $this->getSudoCmd() . 'sh -c ' . escapeshellarg($check);
+        return $this->cmdResultIsOne($this->executeCmds($cmd));
+    }
+
     private function remoteScriptsReady()
     {
         $check = '[ -f ' . escapeshellarg($this->getRemotePublishScript()) . ' ] && [ -f ' . escapeshellarg($this->getRemoteInstallScript()) . ' ] && echo 1 || echo 0';
@@ -742,19 +761,22 @@ class hdsentinel extends eqLogic
             log::add(__CLASS__, 'warning', __('Lancement annulé : scripts distants indisponibles. ', __FILE__) . $this->getRemoteScriptsDiagnostic());
             return false;
         }
-        if (!$this->executeCmds('ls /etc/cron.daily/hdsentinel | wc -l')) {
+        if (!$this->remoteFileExists('/etc/cron.daily/hdsentinel')) {
 
             $this->executeCmds($this->getSudoCmd() . 'mkdir -p /etc/cron.daily/;');
             log::add(__CLASS__, 'info', __('Création du cron distant ', __FILE__));
 
-            if ($this->executeCmds('ls /etc/synoinfo.conf | wc -l')) {
+            if ($this->remoteIsSynology()) {
                 log::add(__CLASS__, 'info', __('Création du cron distant pour synology ', __FILE__));
-                $this->executeCmds($this->getWriteCronCommand());
-            } else {
-                $this->createCron();
+            }
+
+            $createResult = $this->createCron();
+            if (!$this->cmdResultIsZero($createResult)) {
+                log::add(__CLASS__, 'warning', __('Création du cron distant échouée : ', __FILE__) . $this->normalizeCmdResult($createResult));
+                return $createResult;
             }
         }
-        if (!$this->executeCmds($this->getCrontabCommand('status'))) {
+        if (!$this->cmdResultIsOne($this->executeCmds($this->getCrontabCommand('status')))) {
             log::add(__CLASS__, 'info', __('Lancement du cron distant', __FILE__));
             return $this->executeCmds($this->getCrontabCommand('install'));
         }
@@ -774,7 +796,7 @@ class hdsentinel extends eqLogic
             return false;
         }
         $cmd1 = $this->getCrontabCommand('remove');
-        $cmd2 = $this->getSudoCmd() . "rm /etc/cron.daily/hdsentinel; echo $?;";
+        $cmd2 = $this->getSudoCmd() . "rm -f /etc/cron.daily/hdsentinel; echo $?;";
         return $this->executeCmds([$cmd1,$cmd2]);
     }
 
