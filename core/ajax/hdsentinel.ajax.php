@@ -119,7 +119,7 @@ try {
 	if (init('action') == 'all') {
         $result = array();
 		foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
-            if ($eqLogic->getConfiguration('manually', true)) {
+            if (!$eqLogic->getConfiguration('windows', false) && !$eqLogic->getConfiguration('manually', false)) {
                 if (init('make') == 'launch') {
                     $result[] = $eqLogic->launchCron();
                 }

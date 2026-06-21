@@ -32,20 +32,36 @@ class hdsentinel extends eqLogic
          * @param			$_ip      string     Adresse IP
          * @return			          array      Tableau des commandes
          */
-        log::add(__CLASS__, 'debug', 'Début getApiXmlResult'. json_encode($_xml['General_Information']));
+        log::add(__CLASS__, 'debug', 'Début getApiXmlResult'. json_encode(isset($_xml['General_Information']) ? $_xml['General_Information'] : array()));
 
         $array = array();
-        if (isset($_xml['General_Information'])) {
-            $array['name'] = $_xml['General_Information']['Computer_Information']['Computer_Name'] . ' ' . $_xml['General_Information']['Computer_Information']['MAC_Address'];
-            $array['logicalId'] = $_xml['General_Information']['Computer_Information']['MAC_Address'];
-            $array['configuration']['addressip'] = $_ip;
-            $_xml['General_Information']['Application_Information']['Current_Date_And_Time'] = self::convertCurrentDateAndTime($_xml['General_Information']['Application_Information']['Current_Date_And_Time']);
-            if (!isset($_xml['General_Information']['Computer_Information']['Uptime'])) {
-                $_xml['General_Information']['Computer_Information']['Uptime'] = $_xml['General_Information']['Computer_Information']['System_Uptime'];
-            }
-
-            $array['configuration'] = array_merge($_xml['General_Information']['Computer_Information'], $_xml['General_Information']['Application_Information'], $_xml['General_Information']['System_Information']);
+        if (!isset($_xml['General_Information'])) {
+            log::add(__CLASS__, 'warning', 'Rapport XML ignoré : section General_Information absente');
+            return false;
         }
+
+        $general = $_xml['General_Information'];
+        $computer = isset($general['Computer_Information']) ? $general['Computer_Information'] : array();
+        $application = isset($general['Application_Information']) ? $general['Application_Information'] : array();
+        $system = isset($general['System_Information']) ? $general['System_Information'] : array();
+        $mac = isset($computer['MAC_Address']) ? $computer['MAC_Address'] : $_ip;
+        $computerName = isset($computer['Computer_Name']) ? $computer['Computer_Name'] : 'HDSentinel';
+
+        $array['name'] = trim($computerName . ' ' . $mac);
+        $array['logicalId'] = $mac;
+        if (isset($application['Current_Date_And_Time'])) {
+            $application['Current_Date_And_Time'] = self::convertCurrentDateAndTime($application['Current_Date_And_Time']);
+        }
+        if (!isset($computer['Uptime']) && isset($computer['System_Uptime'])) {
+            $computer['Uptime'] = $computer['System_Uptime'];
+        }
+
+        $array['configuration'] = array_merge(
+            array('addressip' => $_ip),
+            $computer,
+            $application,
+            $system
+        );
         log::add(__CLASS__, 'debug', 'Début equipement');
         $eqLogic = self::searchEqLogic($array['logicalId'], $_ip);
         if (!is_object($eqLogic)) {
@@ -53,12 +69,13 @@ class hdsentinel extends eqLogic
             $eqLogic = new hdsentinel();
             $eqLogic->setEqType_name(__CLASS__);
             $eqLogic->setIsEnable(1);
+            $name = $array['name'];
         } else {
             $name = $eqLogic->getName();
         }
         log::add(__CLASS__, 'debug', 'Début a2o' .print_r($array,true));
         utils::a2o($eqLogic, $array);
-        if (is_object($eqLogic)) {
+        if (is_object($eqLogic) && $name != '') {
             $eqLogic->setName($name);
         }
         log::add(__CLASS__, 'debug', 'Fin a2o');
@@ -70,62 +87,67 @@ class hdsentinel extends eqLogic
             $eqLogic->save();
         }
         $disk = array();
-        for ($i = 0; $i <= 10; $i++) {
-            if (array_key_exists('Physical_Disk_Information_Disk_'.$i, $_xml)) {
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Number'])) {
-                    $disk[$i]['Hard_Disk_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Number'];
+        $summaryKeys = array(
+            'Hard_Disk_Number',
+            'Hard_Disk_Device',
+            'Hard_Disk_Serial_Number',
+            'Total_Size',
+            'Current_Temperature',
+            'Maximum_temperature_during_entire_lifespan',
+            'Power_on_time',
+            'Estimated_remaining_lifetime',
+            'Health',
+            'Performance',
+            'Description',
+            'Lifetime_writes',
+        );
+        foreach ($_xml as $xmlKey => $xmlValue) {
+            if (!preg_match('/^Physical_Disk_Information_Disk_(\d+)$/', $xmlKey, $matches)) {
+                continue;
+            }
+            if (!isset($xmlValue['Hard_Disk_Summary']) || !is_array($xmlValue['Hard_Disk_Summary'])) {
+                continue;
+            }
+            $diskIndex = intval($matches[1]);
+            foreach ($summaryKeys as $summaryKey) {
+                if (!isset($xmlValue['Hard_Disk_Summary'][$summaryKey])) {
+                    continue;
                 }
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Device'])) {
-                    $disk[$i]['Hard_Disk_Device'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Device'];
+                $value = $xmlValue['Hard_Disk_Summary'][$summaryKey];
+                if ($summaryKey == 'Power_on_time') {
+                    $value = self::translatePowerOnTime($value);
                 }
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Serial_Number'])) {
-                    $disk[$i]['Hard_Disk_Serial_Number'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Hard_Disk_Serial_Number'];
+                if ($summaryKey == 'Estimated_remaining_lifetime') {
+                    $value = self::translateEstimatedRemainingLifetime($value);
                 }
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Total_Size'])) {
-                    $disk[$i]['Total_Size'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Total_Size'];
-                }
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Current_Temperature'])) {
-                    $disk[$i]['Current_Temperature'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Current_Temperature'];
-                }
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Maximum_temperature_during_entire_lifespan'])) {
-                    $disk[$i]['Maximum_temperature_during_entire_lifespan'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Maximum_temperature_during_entire_lifespan'];
-                }
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Power_on_time'])) {
-                    $disk[$i]['Power_on_time'] = self::translatePowerOnTime($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Power_on_time']);
-                }
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Estimated_remaining_lifetime'])) {
-                    $disk[$i]['Estimated_remaining_lifetime'] = self::translateEstimatedRemainingLifetime($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Estimated_remaining_lifetime']);
-                }
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Health'])) {
-                    $disk[$i]['Health'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Health'];
-                }
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Performance'])) {
-                    $disk[$i]['Performance'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Performance'];
-                }
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Description'])) {
-                    $disk[$i]['Description'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Description'];
-                }
-                if (isset($_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Lifetime_writes'])) {
-                    $disk[$i]['Lifetime_writes'] = $_xml['Physical_Disk_Information_Disk_'.$i]['Hard_Disk_Summary']['Lifetime_writes'];
-                }
+                $disk[$diskIndex][$summaryKey] = $value;
             }
         }
 
         log::add(__CLASS__, 'debug', 'Début commandes');
         $all_cmds = self::loadCmdFromConf();
+        if (!is_array($all_cmds)) {
+            return false;
+        }
         foreach ($disk as $nb => $summaries) {
+            if (!isset($summaries['Hard_Disk_Number'])) {
+                $summaries['Hard_Disk_Number'] = $nb;
+            }
             foreach ($summaries as $summary => $value) {
                 if ($value != '' && $value != '?' && !preg_match('/^Unknown/', $value)) {
                     $cmd = $eqLogic->searchCmd($summary . " " . $summaries['Hard_Disk_Number'], $summary . " " . $summaries['Hard_Disk_Number']);
                     if (!is_object($cmd)) {
                         if (isset($all_cmds[$summary])) {
                             $eqLogic->createCmdsFromConfig($all_cmds[$summary], $summaries['Hard_Disk_Number']);
+                            $cmd = $eqLogic->searchCmd($summary . " " . $summaries['Hard_Disk_Number'], $summary . " " . $summaries['Hard_Disk_Number']);
                         }
-                    } else {
+                    }
+                    if (is_object($cmd)) {
+                        $unite = '';
                         if ($cmd->getSubType() == 'numeric') {
                             $split = explode(' ', $value);
                             $value = $split[0];
-                            $unite = $split[1];
+                            $unite = isset($split[1]) ? $split[1] : '';
                             if ($unite != '') {
                                 $cmd->setUnite($unite)->save();
                             }
@@ -175,6 +197,13 @@ class hdsentinel extends eqLogic
         $datetime = DateTime::createFromFormat("d-n-y H:i:s", $_string);
         if($datetime === false) {
             $datetime = DateTime::createFromFormat("d/m/Y H:i:s", $_string);
+        }
+        if($datetime === false) {
+            $datetime = DateTime::createFromFormat("d-m-Y H:i:s", $_string);
+        }
+        if($datetime === false) {
+            log::add(__CLASS__, 'debug', 'Format de date HDSentinel non reconnu : ' . $_string);
+            return $_string;
         }
         return $datetime->format('Y-m-d H:i:s');
     }
@@ -243,9 +272,13 @@ class hdsentinel extends eqLogic
          */
         $return = null;
         foreach (eqLogic::byType(__CLASS__) as $eqLogic) {
+            if ($_logicalId != '' && $eqLogic->getLogicalId() == $_logicalId) {
+                $return = $eqLogic;
+                break;
+            }
             $sshmanager = eqLogic::byId($eqLogic->getConfiguration('host_id'));
             if (is_object($sshmanager)
-                && ($eqLogic->getLogicalId() == $_logicalId || $sshmanager->getConfiguration(sshmanager::CONFIG_HOST) == $_ip)) {
+                && $sshmanager->getConfiguration(sshmanager::CONFIG_HOST) == $_ip) {
                 $return = $eqLogic;
                 break;
             }
@@ -312,6 +345,9 @@ class hdsentinel extends eqLogic
         $data_path = dirname(__FILE__) . '/../../core/data';
         $eqLogic = self::searchEqLogic('', $_ip);
         if (is_object($eqLogic)) {
+            if (!is_dir($data_path)) {
+                mkdir($data_path, 0755, true);
+            }
             file_put_contents($data_path . '/hdsentinel_'.$eqLogic->getId().'.html', $_html);
             return true;
         }
@@ -405,11 +441,13 @@ class hdsentinel extends eqLogic
         if (!is_object($sshmanager)) {
             return false;
         }
-        $user = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME));
-
+        if (!$this->ensureRemoteScripts()) {
+            log::add(__CLASS__, 'warning', __('Lancement annulé : scripts distants indisponibles. ', __FILE__) . $this->getRemoteScriptsDiagnostic());
+            return false;
+        }
         $plugin = plugin::byId(__CLASS__);
         $cmd = $this->getSudoCmd();
-        $cmd .='bash /home/' . $user . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+        $cmd .='bash ' . $this->getRemotePublishScript();
         $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
         $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
         $cmd .= ' -o html';
@@ -524,7 +562,6 @@ class hdsentinel extends eqLogic
          * @return			$return			string		Retour de la commande
          */
         log::add(__CLASS__, 'info', __('Début création du cron distant', __FILE__));
-        $plugin = plugin::byId(__CLASS__);
         $return = false;
         //$cmd1 = $this->getSudoCmd() . 'touch /etc/cron.daily/hdsentinel; echo $?';
         //$cmd2 = $this->getSudoCmd();
@@ -535,24 +572,10 @@ class hdsentinel extends eqLogic
         if (!is_object($sshmanager)) {
             return false;
         }
-        $user = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME));
-        $cmd2 = '';
-        if ($user != 'root') {
-            $cmd2 .= 'echo ' . $user . ' | su -c \'';
-        }
-        $cmd2 .= 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' bash /home/' . $user . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
-        $cmd2 .= ' -a ' . jeedom::getApiKey($plugin->getId());
-        $cmd2 .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
-        $cmd2 .= ' -o xml';
-        $cmd2 .= ' >> /tmp/hdsentinel_log 2>&1 &"';
-        $cmd2 .= ' > /etc/cron.daily/hdsentinel; echo $?;';
-        if ($user != 'root') {
-            $cmd2 .= '\'';
-        }
+        $cmd2 = $this->getWriteCronCommand();
         $return = $this->executeCmds($cmd2);
 
-        $cmdLog = str_replace(utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME)),'PASSWORD',$cmd2);
-        $cmdLog = str_replace(jeedom::getApiKey($plugin->getId()),'APIKEY',$cmdLog);
+        $cmdLog = $this->sanitizeCommandForLog($cmd2);
         log::add(__CLASS__, 'info', __('Fin création du cron distant cmd1: ', __FILE__) . ' + cmd: ' . $cmdLog . ' = ' . $return);
         return $return;
     }
@@ -568,11 +591,135 @@ class hdsentinel extends eqLogic
         $cmd = '';
         $sshmanager = eqLogic::byId($this->getConfiguration('host_id'));
         if (is_object($sshmanager)) {
-            if (utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME)) != 'root') {
-                $cmd .= 'echo "' . utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME)) . '" | sudo -S ';
+            $user = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME));
+            if ($user != 'root') {
+                $password = '';
+                if (defined('sshmanager::CONFIG_PASSWORD')) {
+                    $password = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_PASSWORD));
+                }
+                if ($password == '') {
+                    $password = utils::decrypt($sshmanager->getConfiguration('password'));
+                }
+                if ($password == '') {
+                    $password = $user;
+                }
+                $cmd .= 'echo ' . escapeshellarg($password) . ' | sudo -S ';
             }
         }
         return $cmd;
+    }
+
+    private function getRemoteDir()
+    {
+        return '/usr/local/hdsentinel-jeedom';
+    }
+
+    private function getRemotePublishScript()
+    {
+        return $this->getRemoteDir() . '/ressources/hdsentinel_to_jeedom_pub.sh';
+    }
+
+    private function getRemoteInstallScript()
+    {
+        return $this->getRemoteDir() . '/ressources/install_apt.sh';
+    }
+
+    private function getCronLine()
+    {
+        $plugin = plugin::byId(__CLASS__);
+        return trim($this->getConfiguration('autorefresh', '03 00 * * *')) . ' ' .
+            'bash ' . $this->getRemotePublishScript() .
+            ' -a ' . jeedom::getApiKey($plugin->getId()) .
+            ' -i ' . escapeshellarg(network::getNetworkAccess('internal')) .
+            ' -o xml >> /tmp/hdsentinel_log 2>&1';
+    }
+
+    private function getWriteCronCommand()
+    {
+        $shell = 'printf "%s\n" ' . escapeshellarg($this->getCronLine()) . ' > /etc/cron.daily/hdsentinel; echo $?';
+        return $this->getSudoCmd() . 'sh -c ' . escapeshellarg($shell);
+    }
+
+    private function getCrontabShell($_action)
+    {
+        $prefix = 'CRONTAB=/usr/bin/crontab; [ -x /opt/bin/crontab ] && CRONTAB=/opt/bin/crontab; ';
+        if ($_action == 'install') {
+            return $prefix . '$CRONTAB /etc/cron.daily/hdsentinel; echo $?';
+        }
+        if ($_action == 'remove') {
+            return $prefix . '$CRONTAB -u root -l 2>/dev/null | grep -v "hdsentinel_to_jeedom_pub" | $CRONTAB -u root -; echo $?';
+        }
+        return $prefix . '$CRONTAB -u root -l 2>/dev/null | grep "hdsentinel_to_jeedom_pub" | wc -l';
+    }
+
+    private function getCrontabCommand($_action)
+    {
+        return $this->getSudoCmd() . 'sh -c ' . escapeshellarg($this->getCrontabShell($_action));
+    }
+
+    private function sanitizeCommandForLog($_cmd)
+    {
+        $cmd = is_array($_cmd) ? json_encode($_cmd) : $_cmd;
+        $cmd = preg_replace("/echo\s+'[^']*'\s+\|\s+sudo\s+-S/", "echo 'PASSWORD' | sudo -S", $cmd);
+        $cmd = preg_replace('/echo\s+"[^"]*"\s+\|\s+sudo\s+-S/', 'echo "PASSWORD" | sudo -S', $cmd);
+        $plugin = plugin::byId(__CLASS__);
+        if (is_object($plugin)) {
+            $cmd = str_replace(jeedom::getApiKey($plugin->getId()), 'APIKEY', $cmd);
+        }
+        return $cmd;
+    }
+
+    private function normalizeCmdResult($_result)
+    {
+        if (is_array($_result)) {
+            $_result = implode("\n", $_result);
+        }
+        return trim(preg_replace('/(^|\n)\s*Password:\s*/', '$1', strval($_result)));
+    }
+
+    private function cmdResultIsOne($_result)
+    {
+        return preg_match('/(^|\s)1(\s|$)/', $this->normalizeCmdResult($_result)) === 1;
+    }
+
+    private function remoteScriptsReady()
+    {
+        $check = '[ -f ' . escapeshellarg($this->getRemotePublishScript()) . ' ] && [ -f ' . escapeshellarg($this->getRemoteInstallScript()) . ' ] && echo 1 || echo 0';
+        $cmd = $this->getSudoCmd() . 'sh -c ' . escapeshellarg($check);
+        $result = $this->normalizeCmdResult($this->executeCmds($cmd));
+        log::add(__CLASS__, 'debug', __('Vérification scripts distants : ', __FILE__) . $result);
+        return $this->cmdResultIsOne($result);
+    }
+
+    private function getRemoteScriptsDiagnostic()
+    {
+        $cmd = $this->getSudoCmd() . 'sh -c ' . escapeshellarg(
+            'id; ls -ld ' . escapeshellarg($this->getRemoteDir()) . ' ' . escapeshellarg($this->getRemoteDir() . '/ressources') . ' 2>&1; ls -l ' . escapeshellarg($this->getRemoteDir() . '/ressources') . ' 2>&1'
+        );
+        return $this->normalizeCmdResult($this->executeCmds($cmd));
+    }
+
+    private function ensureRemoteScripts()
+    {
+        if ($this->remoteScriptsReady()) {
+            return true;
+        }
+
+        log::add(__CLASS__, 'info', __('Scripts distants absents, envoi automatique', __FILE__));
+        $result = $this->sendFile();
+        if (!is_array($result)) {
+            log::add(__CLASS__, 'warning', __('Envoi automatique des scripts impossible', __FILE__));
+            return false;
+        }
+
+        $installOk = isset($result['install']) && $this->cmdResultIsOne($result['install']);
+        $publishOk = isset($result['publish']) && $this->cmdResultIsOne($result['publish']);
+        if ((!$installOk || !$publishOk) && !$this->remoteScriptsReady()) {
+            log::add(__CLASS__, 'warning', __('Scripts distants non trouvés après envoi : ', __FILE__) . json_encode($result));
+            log::add(__CLASS__, 'warning', __('Diagnostic scripts distants : ', __FILE__) . $this->getRemoteScriptsDiagnostic());
+            return false;
+        }
+        return true;
     }
 
     public function launchCron()
@@ -591,9 +738,10 @@ class hdsentinel extends eqLogic
         if (!is_object($sshmanager)) {
             return false;
         }
-        $user = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME));
-
-        $plugin = plugin::byId(__CLASS__);
+        if (!$this->ensureRemoteScripts()) {
+            log::add(__CLASS__, 'warning', __('Lancement annulé : scripts distants indisponibles. ', __FILE__) . $this->getRemoteScriptsDiagnostic());
+            return false;
+        }
         if (!$this->executeCmds('ls /etc/cron.daily/hdsentinel | wc -l')) {
 
             $this->executeCmds($this->getSudoCmd() . 'mkdir -p /etc/cron.daily/;');
@@ -601,25 +749,14 @@ class hdsentinel extends eqLogic
 
             if ($this->executeCmds('ls /etc/synoinfo.conf | wc -l')) {
                 log::add(__CLASS__, 'info', __('Création du cron distant pour synology ', __FILE__));
-                $cmd2 .= $this->getSudoCmd() . 'echo "' . $this->getConfiguration('autorefresh', '03 00 * * *') . ' ' . $this->getSudoCmd() . ' bash /home/' . $user . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
-                $cmd2 .= ' -a ' . jeedom::getApiKey($plugin->getId());
-                $cmd2 .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
-                $cmd2 .= ' -o xml';
-                $cmd2 .= ' >> /tmp/hdsentinel_log 2>&1 &"';
-                $cmd2 .= ' > /tmp/hdsentinel_cron; ' . $this->getSudoCmd() . 'mv /tmp/hdsentinel_cron /etc/cron.daily/hdsentinel; echo $?;';
-
-                $this->executeCmds($cmd2);
+                $this->executeCmds($this->getWriteCronCommand());
             } else {
                 $this->createCron();
             }
         }
-        $cmd3 = '[ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l) || (' . $this->getSudoCmd() . '/usr/bin/crontab -l | grep hdsentinel_to_jeedom_pub | wc -l)';
-
-        if (!$this->executeCmds($cmd3)) {
+        if (!$this->executeCmds($this->getCrontabCommand('status'))) {
             log::add(__CLASS__, 'info', __('Lancement du cron distant', __FILE__));
-            $cmd = '([ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab /etc/cron.daily/hdsentinel) && echo $?) || ';
-            $cmd .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab /etc/cron.daily/hdsentinel) && echo $?)';
-            return $this->executeCmds($cmd);
+            return $this->executeCmds($this->getCrontabCommand('install'));
         }
         return false;
     }
@@ -636,8 +773,7 @@ class hdsentinel extends eqLogic
         if ($this->getConfiguration('windows', false)) {
             return false;
         }
-        $cmd1 = '[ -f "/opt/bin/crontab" ] && ((' . $this->getSudoCmd() . '/opt/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /opt/bin/crontab -); echo $?) || ';
-        $cmd1 .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /usr/bin/crontab -); echo $?)';
+        $cmd1 = $this->getCrontabCommand('remove');
         $cmd2 = $this->getSudoCmd() . "rm /etc/cron.daily/hdsentinel; echo $?;";
         return $this->executeCmds([$cmd1,$cmd2]);
     }
@@ -654,9 +790,7 @@ class hdsentinel extends eqLogic
         if ($this->getConfiguration('windows', false)) {
             return false;
         }
-        $cmd = '[ -f "/opt/bin/crontab" ] && ((' . $this->getSudoCmd() . '/opt/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /opt/bin/crontab -); echo $?) || ';
-        $cmd .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab -u root -l | grep -v "hdsentinel_to_jeedom_pub" | sudo -S /usr/bin/crontab -); echo $?)';
-        return $this->executeCmds($cmd);
+        return $this->executeCmds($this->getCrontabCommand('remove'));
     }
 
 
@@ -672,9 +806,8 @@ class hdsentinel extends eqLogic
         if ($this->getConfiguration('windows', false)) {
             return false;
         }
-        $cmd = '([ -f "/opt/bin/crontab" ] && (' . $this->getSudoCmd() . '/opt/bin/crontab -u root -l | grep hdsentinel_to_jeedom_pub | wc -l)) || ';
-        $cmd .= '([ -f "/usr/bin/crontab" ] && (' . $this->getSudoCmd() . '/usr/bin/crontab -u root -l | grep hdsentinel_to_jeedom_pub | wc -l))';
-        log::add(__CLASS__, 'info', __('Statut du cron distant', __FILE__) . $cmd);
+        $cmd = $this->getCrontabCommand('status');
+        log::add(__CLASS__, 'info', __('Statut du cron distant : ', __FILE__) . $this->sanitizeCommandForLog($cmd));
         return $this->executeCmds($cmd);
     }
 
@@ -694,16 +827,20 @@ class hdsentinel extends eqLogic
         if (!is_object($sshmanager)) {
             return false;
         }
-        $user = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME));
-
-        $cmd = $this->getSudoCmd();
-        $cmd .= 'bash /home/' . $user . '/hdsentinel/ressources/install_apt.sh  >> ' . '/tmp/hdsentinel_dependancy' . ' 2>&1 &';
+        if (!$this->ensureRemoteScripts()) {
+            log::add(__CLASS__, 'warning', __('Installation annulée : scripts distants indisponibles. ', __FILE__) . $this->getRemoteScriptsDiagnostic());
+            return false;
+        }
+        $cmd = $this->getSudoCmd() . 'sh -c ' . escapeshellarg('bash ' . $this->getRemoteInstallScript() . ' >> /tmp/hdsentinel_dependancy 2>&1 & echo 1');
         return $this->executeCmds($cmd);
     }
 
     public function executeCmds($_cmd) {
       
         try {
+            if (func_num_args() > 1) {
+                $_cmd = func_get_args();
+            }
             $result = sshmanager::executeCmds($this->getConfiguration('host_id'), $_cmd);
         } catch (RuntimeException $ex) {
             log::add(__CLASS__, 'debug', $this->getName() . __(' Erreur Runtime du cron distant', __FILE__) . $ex->getMessage());
@@ -714,7 +851,55 @@ class hdsentinel extends eqLogic
         }
         return $result;
     }
-  
+
+    private function sendArchiveFallback($_localArchive, $_remoteArchive)
+    {
+        if (!is_file($_localArchive)) {
+            return false;
+        }
+
+        $encoded = base64_encode(file_get_contents($_localArchive));
+        if ($encoded == '') {
+            return false;
+        }
+
+        log::add(__CLASS__, 'info', __('Transfert SSH Manager impossible, tentative en base64', __FILE__));
+        $remoteBase64 = $_remoteArchive . '.b64';
+        $commands = array('rm -f ' . escapeshellarg($remoteBase64) . ' ' . escapeshellarg($_remoteArchive) . '; echo $?');
+        foreach (str_split($encoded, 700) as $chunk) {
+            $commands[] = 'printf %s ' . escapeshellarg($chunk) . ' >> ' . escapeshellarg($remoteBase64) . '; echo $?';
+        }
+        $commands[] = '(base64 -d ' . escapeshellarg($remoteBase64) . ' > ' . escapeshellarg($_remoteArchive) . ' 2>/dev/null || base64 --decode ' . escapeshellarg($remoteBase64) . ' > ' . escapeshellarg($_remoteArchive) . '); echo $?';
+        $commands[] = 'rm -f ' . escapeshellarg($remoteBase64) . '; test -s ' . escapeshellarg($_remoteArchive) . ' && echo 1 || echo 0';
+
+        $result = $this->executeCmds($commands);
+        log::add(__CLASS__, 'debug', __('Résultat transfert base64 : ', __FILE__) . json_encode($result));
+        return trim($this->executeCmds('test -s ' . escapeshellarg($_remoteArchive) . ' && echo 1 || echo 0')) == '1';
+    }
+
+    private function getRemoteFileWithFallback($_local, $_remote)
+    {
+        try {
+            if (sshmanager::getFile($this->getConfiguration('host_id'), $_local, $_remote)) {
+                return true;
+            }
+        } catch (Throwable $th) {
+            log::add(__CLASS__, 'debug', __('Erreur récupération fichier SSH Manager : ', __FILE__) . $th->getMessage());
+        }
+
+        log::add(__CLASS__, 'info', __('Récupération de fichier via commande SSH', __FILE__));
+        $cmd = $this->getSudoCmd() . 'sh -c ' . escapeshellarg('test -f ' . escapeshellarg($_remote) . ' && cat ' . escapeshellarg($_remote) . ' || true');
+        $content = $this->normalizeCmdResult($this->executeCmds($cmd));
+        if ($content === '') {
+            return false;
+        }
+
+        if (!is_dir(dirname($_local))) {
+            mkdir(dirname($_local), 0755, true);
+        }
+        return file_put_contents($_local, $content) !== false;
+    }
+
     public function getLogDependancy($_dependancy = '')
     {
         /**
@@ -731,7 +916,7 @@ class hdsentinel extends eqLogic
         log::add(__CLASS__, 'info', __('Suppression de la log ', __FILE__) . $local);
         exec('rm -f '. $local);
         log::add(__CLASS__, 'info', __('Récupération de la log distante', __FILE__));
-        if (sshmanager::getFile($this->getConfiguration('host_id'), $local, '/tmp/hdsentinel_dependancy'.$_dependancy)) {
+        if ($this->getRemoteFileWithFallback($local, '/tmp/hdsentinel_dependancy'.$_dependancy)) {
             $this->executeCmds('cat /dev/null > /tmp/hdsentinel_dependancy'.$_dependancy);
             return true;
         }
@@ -754,7 +939,7 @@ class hdsentinel extends eqLogic
         log::add(__CLASS__, 'info', __('Suppression de la log ', __FILE__) . $local);
         exec('rm -f '. $local);
         log::add(__CLASS__, 'info', __('Récupération de la log distante', __FILE__));
-        if (sshmanager::getFile($this->getConfiguration('host_id'), $local, '/tmp/hdsentinel_log'.$_dependancy)) {
+        if ($this->getRemoteFileWithFallback($local, '/tmp/hdsentinel_log'.$_dependancy)) {
             $this->executeCmds('cat /dev/null > /tmp/hdsentinel_log'.$_dependancy);
             return true;
         }
@@ -775,25 +960,54 @@ class hdsentinel extends eqLogic
         if (!is_object($sshmanager)) {
             return false;
         }
-        $user = utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME));
-
         log::add(__CLASS__, 'debug', __('Envoi de fichier ', __FILE__) . $this->getName());
-        $script_path = dirname(__FILE__) . '/../../ressources/';
-		exec('tar -zcvf /tmp/folder-hdsentinel.tar.gz ' . $script_path);
+        $script_path = realpath(dirname(__FILE__) . '/../../ressources/');
+        $localArchive = '/tmp/folder-hdsentinel.tar.gz';
+        $remoteArchive = '/tmp/folder-hdsentinel.tar.gz';
+        exec('tar -zcf ' . escapeshellarg($localArchive) . ' -C ' . escapeshellarg(dirname($script_path)) . ' ressources', $tarOutput, $tarReturn);
+        $result['archive'] = is_file($localArchive) ? filesize($localArchive) : 0;
+        if ($tarReturn !== 0 || !is_file($localArchive)) {
+            log::add(__CLASS__, 'warning', __('Création archive locale impossible : ', __FILE__) . json_encode($tarOutput));
+            return $result;
+        }
 
         log::add(__CLASS__, 'info', __('Création du dossier des scripts', __FILE__));
-        $result['dir'] = $this->executeCmds($cmd.'rm -Rf /home/'.$user.'/hdsentinel',$cmd.'mkdir -p /home/'.$user.'/hdsentinel;echo $?');
+        $result['dir'] = $this->executeCmds(array(
+            $cmd . 'rm -Rf ' . $this->getRemoteDir() . '; echo $?',
+            $cmd . 'mkdir -p ' . $this->getRemoteDir() . '; echo $?'
+        ));
         log::add(__CLASS__, 'info', 'Envoi du fichier /tmp/folder-hdsentinel.tar.gz');
 
-        if (sshmanager::sendFile($this->getConfiguration('host_id'), '/tmp/folder-hdsentinel.tar.gz','/home/'.$user.'/folder-hdsentinel.tar.gz')) {
+        $sendOk = false;
+        try {
+            $sendOk = sshmanager::sendFile($this->getConfiguration('host_id'), $localArchive, $remoteArchive);
+        } catch (Throwable $th) {
+            log::add(__CLASS__, 'debug', __('Erreur transfert SSH Manager : ', __FILE__) . $th->getMessage());
+            $sendOk = false;
+        }
+        if (!$sendOk) {
+            $sendOk = $this->sendArchiveFallback($localArchive, $remoteArchive);
+        }
+        $result['send'] = $sendOk ? 1 : 0;
+
+        if ($sendOk) {
 			log::add(__CLASS__,'info',__('Décompression du dossier distant',__FILE__));
-            $result['uncompress'] = $this->executeCmds($cmd . 'tar -zxf /home/'.$user.'/folder-hdsentinel.tar.gz -C /home/'.$user.'/hdsentinel;echo $?;',$cmd.'rm -f /home/'.$user.'/folder-hdsentinel.tar.gz;echo $?;');
-            $result['install'] = $this->executeCmds('ls /home/'.$user.'/hdsentinel/ressources/install_apt.sh | wc -l');
-            $result['publish'] = $this->executeCmds('ls /home/'.$user.'/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh | wc -l');
+            $result['uncompress'] = $this->executeCmds(array(
+                $cmd . 'tar -zxf ' . $remoteArchive . ' -C ' . $this->getRemoteDir() . '; echo $?',
+                $cmd . 'chmod +x ' . $this->getRemoteDir() . '/ressources/*.sh; echo $?',
+                'rm -f ' . $remoteArchive . '; echo $?'
+            ));
+            $result['install'] = $this->executeCmds($cmd . 'sh -c ' . escapeshellarg('test -f ' . escapeshellarg($this->getRemoteInstallScript()) . ' && echo 1 || echo 0'));
+            $result['publish'] = $this->executeCmds($cmd . 'sh -c ' . escapeshellarg('test -f ' . escapeshellarg($this->getRemotePublishScript()) . ' && echo 1 || echo 0'));
+            $result['install'] = $this->cmdResultIsOne($result['install']) ? 1 : 0;
+            $result['publish'] = $this->cmdResultIsOne($result['publish']) ? 1 : 0;
+            log::add(__CLASS__, 'debug', __('Résultat envoi scripts : ', __FILE__) . json_encode($result));
+        } else {
+            log::add(__CLASS__, 'warning', __('Envoi de l archive distante impossible', __FILE__));
         }
 
         log::add(__CLASS__, 'info', __('Suppression des anciens log', __FILE__));
-        $result['removeLog'] = $this->executeCmds($cmd . 'rm /tmp/hdsentinel_*');
+        $result['removeLog'] = $this->executeCmds($cmd . 'rm -f /tmp/hdsentinel_*');
         return $result;
     }
 
@@ -812,18 +1026,21 @@ class hdsentinel extends eqLogic
         }
         $sshmanager = eqLogic::byId($this->getConfiguration('host_id'));
         if (is_object($sshmanager)) {
+            if (!$this->ensureRemoteScripts()) {
+                return false;
+            }
 
             log::add(__CLASS__, 'info', __('Test de la commande', __FILE__));
             $plugin = plugin::byId(__CLASS__);
             $cmd = $this->getSudoCmd();
-            $cmd .= 'bash /home/' . utils::decrypt($sshmanager->getConfiguration(sshmanager::CONFIG_USERNAME)) . '/hdsentinel/ressources/hdsentinel_to_jeedom_pub.sh';
+            $cmd .= 'bash ' . $this->getRemotePublishScript();
             $cmd .= ' -a ' . jeedom::getApiKey($plugin->getId());
             $cmd .= ' -i \'' . network::getNetworkAccess('internal') . '\'';
             $cmd .= ' -o xml';
             //$cmd .= ' >> /tmp/hdsentinel_log 2>&1 &"';
             $return = $this->executeCmds($cmd);
         }
-        log::add(__CLASS__, 'info', __('Test de la commande : ', __FILE__) . $cmd. __(', résultat : ', __FILE__) . $return);
+        log::add(__CLASS__, 'info', __('Test de la commande : ', __FILE__) . (isset($cmd) ? $this->sanitizeCommandForLog($cmd) : '') . __(', résultat : ', __FILE__) . $return);
         return $return;
     }
 

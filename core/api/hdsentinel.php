@@ -23,26 +23,43 @@ if (!jeedom::apiAccess(init('apikey'), 'hdsentinel')) {
 }
 
 $input = file_get_contents("php://input");
+$contentType = isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : '';
 
-if (preg_match('/xml/',$_SERVER['CONTENT_TYPE'])) {
+if (preg_match('/xml/', $contentType)) {
     $start = strpos($input,"<?xml");
     $end = '</Hard_Disk_Sentinel>';
+    $endPosition = strpos($input, $end);
+    if ($start === false || $endPosition === false) {
+        log::add('hdsentinel', 'warning', 'Rapport XML invalide reçu depuis ' . $_SERVER['REMOTE_ADDR']);
+        die();
+    }
 
     $input = substr($input, $start);
     $input = substr($input, 0, strpos($input,$end) + strlen($end));
 
-    $xml_action = new SimpleXMLElement($input);
-    $result = json_decode(json_encode($xml_action), true);
+    try {
+        $xml_action = new SimpleXMLElement($input);
+        $result = json_decode(json_encode($xml_action), true);
 
-    hdsentinel::getApiXmlResult($result, $_SERVER['REMOTE_ADDR']);
-} else if (preg_match('/html/',$_SERVER['CONTENT_TYPE'])) {
-    $start = strpos($input,"<HTML>");
+        hdsentinel::getApiXmlResult($result, $_SERVER['REMOTE_ADDR']);
+    } catch (Exception $e) {
+        log::add('hdsentinel', 'warning', 'Erreur de lecture XML : ' . $e->getMessage());
+    }
+} else if (preg_match('/html/', $contentType)) {
+    $start = stripos($input,"<html");
     $end = '</html>';
+    $endPosition = stripos($input, $end);
+    if ($start === false || $endPosition === false) {
+        log::add('hdsentinel', 'warning', 'Rapport HTML invalide reçu depuis ' . $_SERVER['REMOTE_ADDR']);
+        die();
+    }
 
     $input = substr($input, $start);
-    $result = substr($input, 0, strpos($input,$end) + strlen($end));
+    $result = substr($input, 0, stripos($input,$end) + strlen($end));
 
     hdsentinel::getApiHtmlResult($result, $_SERVER['REMOTE_ADDR']);
+} else {
+    log::add('hdsentinel', 'warning', 'Type de contenu non supporté : ' . $contentType);
 }
 
 ?>

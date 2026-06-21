@@ -87,20 +87,22 @@ $eqLogics = eqLogic::byType($plugin->getId());
                     if ($eqLogic->getConfiguration('manually', 'undefined') != $_type)  continue;
                     $nbDisks = $eqLogic->getNbDisksByEqLogic();
                     $pourcentHealth = 0;
-                    for($i=0 ; $i < $nbDisks; $i++) {
-                        $nbName=($nbDisks < 1)?'':' '.$i;
-                        $health = $eqLogic->getCmd('info','Health'.$nbName);
-                        if (is_object($health)) {
-                            $pourcentHealth = ( intval($pourcentHealth) + intval($health->execCmd()) );
+                    if ($nbDisks > 0) {
+                        for($i=0 ; $i < $nbDisks; $i++) {
+                            $nbName=($nbDisks < 1)?'':' '.$i;
+                            $health = $eqLogic->getCmd('info','Health'.$nbName);
+                            if (is_object($health)) {
+                                $pourcentHealth = ( intval($pourcentHealth) + intval($health->execCmd()) );
+                            }
                         }
+                        $pourcentHealth = round( intval($pourcentHealth) / intval($nbDisks),0);
                     }
-                    $pourcentHealth = round( intval($pourcentHealth) / intval($nbDisks),0);
                     $colorHealth = ($pourcentHealth<90)?($pourcentHealth<75)?'red':'orange':'green';
                     $opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
 
                     echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
                     echo '<span class="classinfoEqlogic label-info" style="margin-top:19px;" title="{{Nombre de disques}}">'.$nbDisks.'</span>';
-                    echo (is_nan($pourcentHealth)) ? '' : '<span class="classinfoEqlogic" style="margin-top:63px;background:'.$colorHealth.';" title="{{Santé (moyenne)}}">'.$pourcentHealth.' %</span>';
+                    echo ($nbDisks < 1) ? '' : '<span class="classinfoEqlogic" style="margin-top:63px;background:'.$colorHealth.';" title="{{Santé (moyenne)}}">'.$pourcentHealth.' %</span>';
                     echo '<img src="' . $_plugin->getPathImgIcon() . '"/>';
                     echo '<br>';
                     echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';

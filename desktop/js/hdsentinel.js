@@ -16,7 +16,7 @@
 
 document.getElementById('div_hdsentinel').addEventListener('click', function(event) {
     var _target = null
-    if (_target = event.target.closest('#bt_hdsentinelDocumentation')) {
+    if (_target = event.target.closest('#bt_hdsentinelDocumentation, .bt_hdsentinelDocumentation')) {
         window.open(_target.getAttribute('data-location'), '_blank');
     }
     if (_target = event.target.closest('.pluginAction[data-action=openLocation]')) {
@@ -52,7 +52,7 @@ document.getElementById('div_hdsentinel').addEventListener('click', function(eve
                     return;
                 }
                 if (data.result != '') {
-                    if (data.result.publish != "1" || data.result.install != "1") {
+                    if (parseInt(data.result.publish) !== 1 || parseInt(data.result.install) !== 1) {
                         jeedomUtils.showAlert({message: '{{Envoi des scripts échoué :}}'+JSON.stringify(data.result), level: 'danger'});
                         return;
                     }
@@ -78,6 +78,10 @@ document.getElementById('div_hdsentinel').addEventListener('click', function(eve
                     jeedomUtils.showAlert({message: data.result, level: 'danger'});
                     return;
                 }
+                if (data.result === false || data.result === '0' || data.result === '') {
+                    jeedomUtils.showAlert({message: '{{Installation non lancée : vérifiez l\'hôte SSH et l\'envoi des scripts.}}', level: 'danger'});
+                    return;
+                }
                 jeedomUtils.showAlert({message: '{{Installation lancée}}', level: 'success'});
             }
         });
@@ -99,6 +103,11 @@ document.getElementById('div_hdsentinel').addEventListener('click', function(eve
                     jeedomUtils.showAlert({message: data.result, level: 'danger'});
                     return;
                 }
+                if (data.result === false || data.result === '0' || data.result === '') {
+                    jeedomUtils.showAlert({message: '{{Récupération du log impossible : log distant absent ou hôte SSH inaccessible.}}', level: 'danger'});
+                    return;
+                }
+                jeedomUtils.showAlert({message: '{{Log récupéré.}}', level: 'success'});
             }
         });
     }
@@ -119,6 +128,11 @@ document.getElementById('div_hdsentinel').addEventListener('click', function(eve
                     jeedomUtils.showAlert({message: data.result, level: 'danger'});
                     return;
                 }
+                if (data.result === false || data.result === '0' || data.result === '') {
+                    jeedomUtils.showAlert({message: '{{Récupération du log impossible : log distant absent ou hôte SSH inaccessible.}}', level: 'danger'});
+                    return;
+                }
+                jeedomUtils.showAlert({message: '{{Log récupéré.}}', level: 'success'});
             }
         });
     }
@@ -205,7 +219,7 @@ document.getElementById('div_hdsentinel').addEventListener('click', function(eve
     }
     if (_target = event.target.closest('.hdsentinelAction[data-action=changeAutoModeRemote]')) {
         var auto = 1 -  document.querySelector('.eqLogicAttr[data-l2key="remoteDaemonAuto"]').value;
-        document.querySelector('.eqLogicAttr[data-l2key="remoteDaemonAuto"]').innerValue = auto;
+        document.querySelector('.eqLogicAttr[data-l2key="remoteDaemonAuto"]').value = auto;
         document.querySelector('.eqLogicAction[data-action=save]').click();
     }
     if (_target = event.target.closest('.hdsentinelAction[data-action=test]')) {

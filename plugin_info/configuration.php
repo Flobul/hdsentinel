@@ -72,31 +72,91 @@ sendVarToJS('version', hdsentinel::$_hdsentinelVersion);
 	</fieldset>
 
     <fieldset>
-    <legend><i class="icon loisir-darth"></i> {{Distant}}</legend>
-		<?php
-            foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
-                if ($eqLogic->getConfiguration('manually', true)) {
-                    echo '<div class="form-group">';
-                    echo '<label class="col-lg-4 control-label">{{Version installée sur}} ' . $eqLogic->getName() . '</label>';
-                    echo '<div class="col-lg-6">';
-                    echo '<span>' . $eqLogic->getConfiguration('Installed_version','N/A') . ' </span>';
-                    echo '<label> {{Dernière communication}} </label>';
-                    echo '<span> (' . $eqLogic->getConfiguration('Current_Date_And_Time','N/A') . ')</span>';
-                    echo '</div>';
-                    echo '</div>';
-                }
-			}
-		?>
-    <div class="form-group">
-        <label class="col-lg-3"></label>
-        <div class="col-lg-8">
-            <a class="btn btn-warning allEqlogics" data-action="upload"><i class="fas fa-arrow-up"></i> {{Mettre à jour les fichiers sur tous}}</a>
-            <a class="btn btn-warning allEqlogics" data-action="update"><i class="fas fa-arrow-up"></i> {{Installer HD Sentinel sur tous}}</a>
-            <a class="btn btn-success allEqlogics" data-action="launch"><i class="fas fa-play"></i> {{Tout relancer}}</a>
-            <a class="btn btn-danger allEqlogics" data-action="stop"><i class="fas fa-stop"></i> {{Tout arrêter}}</a>
-            <a class="btn btn-danger allEqlogics" data-action="stopNdelete"><i class="fas fa-stop"></i> {{Tout arrêter et supprimer}}</a>
+        <legend><i class="fas fa-sliders-h"></i> {{Options du plugin}}</legend>
+        <div class="form-group">
+            <label class="col-lg-3 control-label">{{Mise à jour automatique des équipements distants}}
+                <sup><i class="fas fa-question-circle tooltips" title="{{Lors d'une installation ou mise à jour du plugin, renvoie les scripts, réinstalle HD Sentinel et relance le cron sur les équipements distants compatibles.}}"></i></sup>
+            </label>
+            <div class="col-lg-2">
+                <input type="checkbox" class="configKey form-control" data-l1key="autoUpdateRemote" />
+            </div>
+            <div class="col-lg-6">
+                <span class="label label-warning">{{À activer seulement si les accès SSH/sudo sont fonctionnels sur les hôtes distants.}}</span>
+            </div>
         </div>
-	</div>
+    </fieldset>
+
+    <fieldset>
+        <legend><i class="fas fa-route"></i> {{Modes de fonctionnement}}</legend>
+        <div class="alert alert-info">
+            <strong>{{Linux / Raspberry / Synology}}</strong> : {{renseigner un hôte SSH Manager, envoyer les fichiers, installer HD Sentinel, puis lancer le cron distant.}}
+            <br>
+            <strong>{{Synology}}</strong> : {{le script détecte DSM via synoinfo.conf et mappe l'architecture Synology vers le binaire HD Sentinel compatible lorsque celui-ci existe. Les architectures PowerPC ne sont pas supportées par HD Sentinel Linux.}}
+            <br>
+            <strong>{{Windows}}</strong> : {{cocher Windows dans l'équipement, renseigner l'adresse IP, le port XML du service HD Sentinel et le mot de passe si nécessaire.}}
+            <br>
+            <strong>{{Installation manuelle}}</strong> : {{à utiliser si HD Sentinel est déjà installé et que vous souhaitez uniquement interroger l'équipement depuis Jeedom.}}
+        </div>
+    </fieldset>
+
+    <fieldset>
+    <legend><i class="icon loisir-darth"></i> {{Équipements distants}}</legend>
+        <div class="table-responsive">
+            <table class="table table-condensed table-striped">
+                <thead>
+                    <tr>
+                        <th>{{Équipement}}</th>
+                        <th>{{Mode}}</th>
+                        <th>{{Hôte / IP}}</th>
+                        <th>{{Version HD Sentinel}}</th>
+                        <th>{{Dernière communication}}</th>
+                        <th>{{Auto-actualisation}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php
+                    foreach (eqLogic::byType('hdsentinel') as $eqLogic) {
+                        $mode = '{{Distant SSH}}';
+                        $host = 'N/A';
+                        if ($eqLogic->getConfiguration('windows', false)) {
+                            $mode = '{{Windows XML}}';
+                            $host = $eqLogic->getConfiguration('addressip', 'N/A') . ':' . $eqLogic->getConfiguration('portssh', 'N/A');
+                        } else {
+                            if ($eqLogic->getConfiguration('manually', false)) {
+                                $mode = '{{Manuel}}';
+                            }
+                            $sshmanager = eqLogic::byId($eqLogic->getConfiguration('host_id'));
+                            if (is_object($sshmanager)) {
+                                $host = $sshmanager->getConfiguration(sshmanager::CONFIG_HOST, 'N/A');
+                            }
+                        }
+                        echo '<tr>';
+                        echo '<td><a href="' . $eqLogic->getLinkToConfiguration() . '">' . $eqLogic->getHumanName(true) . '</a></td>';
+                        echo '<td><span class="label label-info">' . $mode . '</span></td>';
+                        echo '<td>' . $host . '</td>';
+                        echo '<td>' . $eqLogic->getConfiguration('Installed_version','N/A') . '</td>';
+                        echo '<td>' . $eqLogic->getConfiguration('Current_Date_And_Time','N/A') . '</td>';
+                        echo '<td>' . $eqLogic->getConfiguration('autorefresh','N/A') . '</td>';
+                        echo '</tr>';
+                    }
+                ?>
+                </tbody>
+            </table>
+        </div>
+        <div class="alert alert-warning">
+            {{Ordre recommandé pour un nouvel équipement distant : sauvegarder l'équipement, envoyer les fichiers, installer HD Sentinel, tester, puis lancer le cron. Consultez les logs de dépendances si l'installation reste bloquée.}}
+        </div>
+        <div class="form-group">
+            <label class="col-lg-3"></label>
+            <div class="col-lg-8">
+                <a class="btn btn-warning allEqlogics" data-action="upload"><i class="fas fa-arrow-up"></i> {{Mettre à jour les fichiers sur tous}}</a>
+                <a class="btn btn-warning allEqlogics" data-action="update"><i class="fas fa-download"></i> {{Installer HD Sentinel sur tous}}</a>
+                <a class="btn btn-success allEqlogics" data-action="launch"><i class="fas fa-play"></i> {{Tout relancer}}</a>
+                <a class="btn btn-danger allEqlogics" data-action="stop"><i class="fas fa-stop"></i> {{Tout arrêter}}</a>
+                <a class="btn btn-danger allEqlogics" data-action="stopNdelete"><i class="fas fa-trash-alt"></i> {{Tout arrêter et supprimer}}</a>
+            </div>
+        </div>
+    </fieldset>
 </form>
 <script>
 document.querySelectorAll('.allEqlogics').forEach(function(button) {

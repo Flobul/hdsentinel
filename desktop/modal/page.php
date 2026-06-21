@@ -66,7 +66,8 @@ $eqLogics = hdsentinel::byType('hdsentinel');
                     mkdir($data_path);
                 }
                 usleep(10);
-                $html = file_get_contents($data_path . '/hdsentinel_'.$eqLogic->getId().'.html');
+                $htmlFile = $data_path . '/hdsentinel_'.$eqLogic->getId().'.html';
+                $html = is_file($htmlFile) ? file_get_contents($htmlFile) : '';
                 if ($html) {
                     echo $html;
                 }
