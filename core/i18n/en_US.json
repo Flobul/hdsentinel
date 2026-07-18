@@ -21,6 +21,7 @@
         "Création archive locale impossible : ": "Unable to create local archive: ",
         "Création du cron distant ": "Remote cron creation",
         "Création du cron distant pour synology ": "Remote cron creation for synology",
+        "Création du cron distant échouée : ": "Failed to create remote cron job: ",
         "Création du dossier des scripts": "Script folder creation",
         "Diagnostic scripts distants : ": "Remote script diagnostics: ",
         "Durée de vie estimée": "Estimated lifetime",
