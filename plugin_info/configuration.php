@@ -18,7 +18,7 @@
 require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
 
 include_file('core', 'authentification', 'php');
-if (!isConnect()) {
+if (!isConnect('admin')) {
 	include_file('desktop', '404', 'php');
 	die();
 }
@@ -27,7 +27,7 @@ $plugin = plugin::byId('hdsentinel');
 sendVarToJS('version', hdsentinel::$_hdsentinelVersion);
 
 ?>
-<form class="form-horizontal">
+<form class="form-horizontal" id="configuration_plugin_hdsentinel">
     <fieldset>
 		<legend>
 		<i class="fa fa-list-alt"></i> {{Général}}
@@ -161,7 +161,7 @@ sendVarToJS('version', hdsentinel::$_hdsentinelVersion);
 <script>
 document.querySelectorAll('.allEqlogics').forEach(function(button) {
     button.addEventListener('click', function() {
-        var action = $(this).attr('data-action');
+	        var action = this.dataset.action;
         domUtils.ajax({
             type: "POST",
             url: "plugins/hdsentinel/core/ajax/hdsentinel.ajax.php",
@@ -178,8 +178,7 @@ document.querySelectorAll('.allEqlogics').forEach(function(button) {
                     jeedomUtils.showAlert({message: data.result, level: 'danger'});
                     return;
                 }
-                console.log(data)
-                jeedomUtils.showAlert({message: '{{Réussie}}', level: 'success'});
+	                jeedomUtils.showAlert({message: '{{Réussie}}', level: 'success'});
             }
         });
     });
