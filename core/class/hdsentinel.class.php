@@ -20,7 +20,7 @@ require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 
 class hdsentinel extends eqLogic
 {
-    public static $_hdsentinelVersion = '1.02.00';
+    public static $_hdsentinelVersion = '1.02.01';
     public static $_widgetPossibility = array('custom' => true);
 
     public static function getApiXmlResult($_xml, $_ip)
@@ -936,7 +936,9 @@ class hdsentinel extends eqLogic
         $name = $this->getName();
         $local = dirname(__FILE__) . '/../../../../log/hdsentinel_'.str_replace(' ', '-', $name).$_dependancy;
         log::add(__CLASS__, 'info', __('Suppression de la log ', __FILE__) . $local);
-        exec('rm -f '. $local);
+        if (is_file($local)) {
+            @unlink($local);
+        }
         log::add(__CLASS__, 'info', __('Récupération de la log distante', __FILE__));
         if ($this->getRemoteFileWithFallback($local, '/tmp/hdsentinel_dependancy'.$_dependancy)) {
             $this->executeCmds('cat /dev/null > /tmp/hdsentinel_dependancy'.$_dependancy);
@@ -959,7 +961,9 @@ class hdsentinel extends eqLogic
         $name = $this->getName();
         $local = dirname(__FILE__) . '/../../../../log/hdsentinel_log_'.str_replace(' ', '-', $name).$_dependancy;
         log::add(__CLASS__, 'info', __('Suppression de la log ', __FILE__) . $local);
-        exec('rm -f '. $local);
+        if (is_file($local)) {
+            @unlink($local);
+        }
         log::add(__CLASS__, 'info', __('Récupération de la log distante', __FILE__));
         if ($this->getRemoteFileWithFallback($local, '/tmp/hdsentinel_log'.$_dependancy)) {
             $this->executeCmds('cat /dev/null > /tmp/hdsentinel_log'.$_dependancy);

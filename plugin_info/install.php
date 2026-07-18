@@ -70,7 +70,11 @@ function hdsentinel_remove() {
         log::add('hdsentinel', 'info', __('Début purge des logs vides ', __FILE__) . $eqLogic->getName());
 
         if (is_dir(dirname(__FILE__) . '/../../../log/')){
-            shell_exec(system::getCmdSudo().' rm -f ' . dirname(__FILE__) . '/../../../log/hdsentinel_log*');
+            foreach (glob(dirname(__FILE__) . '/../../../log/hdsentinel_log*') ?: array() as $logFile) {
+                if (is_file($logFile)) {
+                    @unlink($logFile);
+                }
+            }
             log::add('hdsentinel', 'info', __('Logs vides supprimé pour ', __FILE__) . $eqLogic->getName());
         }
     }
