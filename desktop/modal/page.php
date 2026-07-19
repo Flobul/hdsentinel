@@ -69,11 +69,11 @@ $eqLogics = hdsentinel::byType('hdsentinel');
                 $htmlFile = $data_path . '/hdsentinel_'.$eqLogic->getId().'.html';
                 $html = is_file($htmlFile) ? file_get_contents($htmlFile) : '';
                 if ($html) {
-                    echo $html;
+					echo hdsentinel::sanitizeReportHtml($html);
                 }
             } else {
                 $html_result = $eqLogic->getHtmlDisksFullResultManually();
-				echo $html_result;
+				echo hdsentinel::sanitizeReportHtml($html_result);
             }
             echo '</div>';
             $i++;

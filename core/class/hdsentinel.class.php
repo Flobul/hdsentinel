@@ -348,11 +348,65 @@ class hdsentinel extends eqLogic
             if (!is_dir($data_path)) {
                 mkdir($data_path, 0755, true);
             }
-            file_put_contents($data_path . '/hdsentinel_'.$eqLogic->getId().'.html', $_html);
+			$safeHtml = self::sanitizeReportHtml($_html);
+			if ($safeHtml === '') {
+				return false;
+			}
+            file_put_contents($data_path . '/hdsentinel_'.$eqLogic->getId().'.html', $safeHtml, LOCK_EX);
             return true;
         }
         return false;
     }
+
+	public static function sanitizeReportHtml($_html)
+	{
+		$html = (string) $_html;
+		if ($html === '' || strlen($html) > 2097152) {
+			return '';
+		}
+		$previous = libxml_use_internal_errors(true);
+		$document = new DOMDocument();
+		$loaded = $document->loadHTML($html, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
+		libxml_clear_errors();
+		libxml_use_internal_errors($previous);
+		if (!$loaded) {
+			return '';
+		}
+
+		$xpath = new DOMXPath($document);
+		foreach ($xpath->query('//script|//iframe|//frame|//object|//embed|//base|//form|//input|//button|//meta[@http-equiv]') as $node) {
+			$node->parentNode->removeChild($node);
+		}
+		foreach ($xpath->query('//*') as $node) {
+			foreach (iterator_to_array($node->attributes ?: array()) as $attribute) {
+				$name = strtolower($attribute->name);
+				$value = trim($attribute->value);
+				if (strpos($name, 'on') === 0) {
+					$node->removeAttribute($attribute->name);
+					continue;
+				}
+				if (in_array($name, array('href', 'src', 'xlink:href'), true)) {
+					$normalized = strtolower(preg_replace('/[\x00-\x20]+/', '', $value));
+					if (strpos($normalized, 'javascript:') === 0 || strpos($normalized, 'vbscript:') === 0 || (strpos($normalized, 'data:') === 0 && strpos($normalized, 'data:image/') !== 0)) {
+						$node->removeAttribute($attribute->name);
+					}
+				}
+				if ($name === 'style' && preg_match('/expression\s*\(|url\s*\(/i', $value)) {
+					$node->removeAttribute('style');
+				}
+			}
+		}
+
+		$body = $document->getElementsByTagName('body')->item(0);
+		if (!$body) {
+			return '';
+		}
+		$output = '';
+		foreach ($body->childNodes as $child) {
+			$output .= $document->saveHTML($child);
+		}
+		return $output;
+	}
   
   
     public function postSave()
