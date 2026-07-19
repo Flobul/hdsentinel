@@ -11,7 +11,8 @@
         "stopCron Remote inconnu : ": "stopCron Remoto desconhecido :"
     },
     "plugins\/hdsentinel\/core\/api\/hdsentinel.php": {
-        "Clef API non valide, vous n\\'êtes pas autorisé à effectuer cette action (hdsentinel)": "Chave de API inválida, não está autorizado a realizar esta ação (hdsentinel)"
+        "Clef API non valide, vous n\\'êtes pas autorisé à effectuer cette action (hdsentinel)": "Chave de API inválida, não está autorizado a realizar esta ação (hdsentinel)",
+        "Rapport trop volumineux": "Relatório demasiado extenso"
     },
     "plugins\/hdsentinel\/core\/class\/hdsentinel.class.php": {
         " Erreur Runtime du cron distant": " Erro de tempo de execução do cron remoto",
